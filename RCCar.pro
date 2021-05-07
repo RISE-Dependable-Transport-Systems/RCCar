@@ -18,6 +18,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         sdvp_qtcommon/carstate.cpp \
+        sdvp_qtcommon/ext/vesc/vescpacket.cpp \
         sdvp_qtcommon/legacy/locpoint.cpp \
         sdvp_qtcommon/legacy/packet.cpp \
         sdvp_qtcommon/legacy/tcpserversimple.cpp \
@@ -37,6 +38,7 @@ SOURCES += \
 
 HEADERS += \
         sdvp_qtcommon/carstate.h \
+        sdvp_qtcommon/ext/vesc/vescpacket.h \
         sdvp_qtcommon/legacy/datatypes.h \
         sdvp_qtcommon/legacy/locpoint.h \
         sdvp_qtcommon/legacy/packet.h \

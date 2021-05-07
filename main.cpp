@@ -5,10 +5,20 @@
 #include "sdvp_qtcommon/carmovementcontroller.h"
 #include "sdvp_qtcommon/gnss/ubloxrover.h"
 #include "sdvp_qtcommon/waypointfollower.h"
+#include "sdvp_qtcommon/vescmotorcontroller.h"
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
+
+    QSharedPointer<VESCMotorController> mVESCMotorController(new VESCMotorController());
+    QList<QSerialPortInfo> ports = QSerialPortInfo::availablePorts();
+    foreach(const QSerialPortInfo &portInfo, ports) {
+        if (portInfo.description().toLower().replace("-", "").contains("chibios")) { // assumption: Serial device with ChibiOS in description is VESC
+            mVESCMotorController->connectSerial(portInfo);
+            qDebug() << "VESCMotorController connected to:" << portInfo.systemLocation();
+        }
+    }
 
     // --- VehicleState and lower-level control setup ---
     QSharedPointer<CarState> mCarState(new CarState);
@@ -25,11 +35,10 @@ int main(int argc, char *argv[])
 
     // GNSS incl. IMU (on u-blox F9R)
     QSharedPointer<UbloxRover> mUbloxRover(new UbloxRover(mCarState));
-    QList<QSerialPortInfo> ports = QSerialPortInfo::availablePorts();
     foreach(const QSerialPortInfo &portInfo, ports) {
         if (portInfo.manufacturer().toLower().replace("-", "").contains("ublox")) {
             mUbloxRover->connectSerial(portInfo);
-            qDebug() << "Connected to:" << portInfo.systemLocation();
+            qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
         }
     }
 
