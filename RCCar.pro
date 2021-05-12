@@ -25,6 +25,8 @@ SOURCES += \
         sdvp_qtcommon/vbytearray.cpp \
         sdvp_qtcommon/legacy/packetinterfacetcpserver.cpp \
         sdvp_qtcommon/movementcontroller.cpp \
+        sdvp_qtcommon/motorcontroller.cpp \
+        sdvp_qtcommon/servocontroller.cpp \
         sdvp_qtcommon/vescmotorcontroller.cpp \
         sdvp_qtcommon/vehiclestate.cpp \
         sdvp_qtcommon/pospoint.cpp \
@@ -46,6 +48,8 @@ HEADERS += \
         sdvp_qtcommon/vbytearray.h \
         sdvp_qtcommon/legacy/packetinterfacetcpserver.h \
         sdvp_qtcommon/movementcontroller.h \
+        sdvp_qtcommon/motorcontroller.h \
+        sdvp_qtcommon/servocontroller.h \
         sdvp_qtcommon/vescmotorcontroller.h \
         sdvp_qtcommon/vehiclestate.h \
         sdvp_qtcommon/pospoint.h \

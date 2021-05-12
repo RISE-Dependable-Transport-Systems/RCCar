@@ -11,6 +11,11 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
+    // --- VehicleState and lower-level control setup ---
+    QSharedPointer<CarState> mCarState(new CarState);
+    QSharedPointer<CarMovementController> mCarMovementController(new CarMovementController(mCarState));
+
+    // setup and connect VESC
     QSharedPointer<VESCMotorController> mVESCMotorController(new VESCMotorController());
     QList<QSerialPortInfo> ports = QSerialPortInfo::availablePorts();
     foreach(const QSerialPortInfo &portInfo, ports) {
@@ -19,10 +24,10 @@ int main(int argc, char *argv[])
             qDebug() << "VESCMotorController connected to:" << portInfo.systemLocation();
         }
     }
-
-    // --- VehicleState and lower-level control setup ---
-    QSharedPointer<CarState> mCarState(new CarState);
-    QSharedPointer<CarMovementController> mCarMovementController(new CarMovementController(mCarState));
+    if (mVESCMotorController->isSerialConnected()) {
+        mCarMovementController->setMotorController(mVESCMotorController);
+        mCarMovementController->setServoController(mVESCMotorController->getServoController());
+    }
 
     // --- Positioning setup ---
     // Odometry
