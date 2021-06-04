@@ -30,8 +30,8 @@ int main(int argc, char *argv[])
     }
 
     // --- Positioning setup ---
-    // Odometry
-    const int mUpdateVehicleStatePeriod_ms = 100;
+    // Odometry, TODO: use VESC feedback
+    const int mUpdateVehicleStatePeriod_ms = 25;
     QTimer mUpdateVehicleStateTimer;
     QObject::connect(&mUpdateVehicleStateTimer, &QTimer::timeout, [&](){
         mCarState->simulationStep(mUpdateVehicleStatePeriod_ms);
@@ -46,6 +46,16 @@ int main(int argc, char *argv[])
             qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
         }
     }
+    QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPos, [](QSharedPointer<VehicleState> vehicleState) {
+        PosPoint posGNSS = vehicleState->getPosition(PosType::GNSS);
+        PosPoint posFusedTmp = vehicleState->getPosition();
+
+        posFusedTmp.setXY(posGNSS.getX(), posGNSS.getY());
+        posFusedTmp.setHeight(posGNSS.getHeight());
+
+        // "Fusion" currently means using the GNSS position whenever it is updated and applying odometry on top of it
+        vehicleState->setPosition(posFusedTmp);
+    });
 
     // --- Autopilot ---
     QSharedPointer<WaypointFollower> mWaypointFollower(new WaypointFollower(mCarMovementController));
