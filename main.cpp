@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
     PacketInterfaceTCPServer mPacketIFServer;
     mPacketIFServer.setVehicleState(mCarState);
     mPacketIFServer.setMovementController(mCarMovementController);
+    mPacketIFServer.setUbloxRover(mUbloxRover);
     mPacketIFServer.setWaypointFollower(mWaypointFollower);
     mPacketIFServer.listen();
 
