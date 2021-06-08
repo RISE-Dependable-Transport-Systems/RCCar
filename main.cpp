@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     });
     mUpdateVehicleStateTimer.start(mUpdateVehicleStatePeriod_ms);
 
-    // GNSS incl. IMU (on u-blox F9R)
+    // GNSS, including IMU on u-blox F9R
     QSharedPointer<UbloxRover> mUbloxRover(new UbloxRover(mCarState));
     foreach(const QSerialPortInfo &portInfo, ports) {
         if (portInfo.manufacturer().toLower().replace("-", "").contains("ublox")) {
@@ -46,14 +46,25 @@ int main(int argc, char *argv[])
             qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
         }
     }
-    QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPos, [](QSharedPointer<VehicleState> vehicleState) {
+
+    // Fuse position
+    // "Fusion" currently means using the GNSS position whenever it is updated
+    // TODO: introduce Fusion class, fuse IMU/GNSS orientation, consider GNSS age, weight GNSS yaw depending on speed, clamp IMU when stationary, ...
+    // TODO: sanity checks, e.g., yaw (and position) should not jump
+    QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndYaw, [](QSharedPointer<VehicleState> vehicleState, bool fused) {
+        Q_UNUSED(fused)
         PosPoint posGNSS = vehicleState->getPosition(PosType::GNSS);
+        PosPoint posIMU = vehicleState->getPosition(PosType::IMU);
         PosPoint posFusedTmp = vehicleState->getPosition(PosType::fused);
 
         posFusedTmp.setXY(posGNSS.getX(), posGNSS.getY());
         posFusedTmp.setHeight(posGNSS.getHeight());
+        posFusedTmp.setYaw(posGNSS.getYaw());
 
-        // "Fusion" currently means using the GNSS position whenever it is updated and applying odometry on top of it
+        // simply use last knwon roll and pitch from IMU
+        posFusedTmp.setRoll(posIMU.getRoll());
+        posFusedTmp.setPitch(posIMU.getPitch());
+
         // TODO: GNSS position's age should be considered
         vehicleState->setPosition(posFusedTmp);
     });
