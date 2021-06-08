@@ -36,7 +36,8 @@ SOURCES += \
         sdvp_qtcommon/gnss/ubloxrover.cpp \
         sdvp_qtcommon/ext/Fusion/FusionBias.c \
         sdvp_qtcommon/ext/Fusion/FusionAhrs.c \
-        sdvp_qtcommon/waypointfollower.cpp
+        sdvp_qtcommon/waypointfollower.cpp \
+        carpositionfuser.cpp
 
 HEADERS += \
         sdvp_qtcommon/carstate.h \
@@ -60,7 +61,8 @@ HEADERS += \
         sdvp_qtcommon/ext/Fusion/FusionBias.h \
         sdvp_qtcommon/ext/Fusion/FusionAhrs.h \
         sdvp_qtcommon/ext/Fusion/FusionCalibration.h \
-        sdvp_qtcommon/waypointfollower.h
+        sdvp_qtcommon/waypointfollower.h \
+        carpositionfuser.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
