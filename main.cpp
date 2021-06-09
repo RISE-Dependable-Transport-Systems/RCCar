@@ -1,5 +1,6 @@
 #include <QCoreApplication>
 #include <QSerialPortInfo>
+#include <QDateTime>
 #include "sdvp_qtcommon/legacy/packetinterfacetcpserver.h"
 #include "sdvp_qtcommon/carstate.h"
 #include "sdvp_qtcommon/carmovementcontroller.h"
@@ -27,7 +28,7 @@ int main(int argc, char *argv[])
     }
     if (mVESCMotorController->isSerialConnected()) {
         mCarMovementController->setMotorController(mVESCMotorController);
-        mCarMovementController->setServoController(mVESCMotorController->getServoController());
+        mCarMovementController->setServoController(mVESCMotorController->getServoController()); // VESC is a special case that can even control the servo
     }
 
     // --- Positioning setup ---
@@ -39,7 +40,22 @@ int main(int argc, char *argv[])
     });
     mUpdateVehicleStateTimer.start(mUpdateVehicleStatePeriod_ms);
 
-    // GNSS, including IMU on u-blox F9R
+    bool useVESCIMU = false; // use either VESC or Ublox IMU
+    // Optional IMU from VESC
+    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotIMUOrientation, [&](double roll, double pitch, double yaw){
+        PosPoint tmpIMUPos = mCarState->getPosition(PosType::IMU);
+
+        tmpIMUPos.setRoll(roll);
+        tmpIMUPos.setPitch(pitch);
+        tmpIMUPos.setYaw(yaw);
+        // VESC does not provide timestamp
+        tmpIMUPos.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()).msecsSinceStartOfDay());
+
+        mCarState->setPosition(tmpIMUPos);
+    });
+    mVESCMotorController->setEnableIMUOrientationUpdate(useVESCIMU);
+
+    // GNSS, with optional IMU on u-blox F9R
     QSharedPointer<UbloxRover> mUbloxRover(new UbloxRover(mCarState));
     foreach(const QSerialPortInfo &portInfo, ports) {
         if (portInfo.manufacturer().toLower().replace("-", "").contains("ublox")) {
@@ -47,6 +63,7 @@ int main(int argc, char *argv[])
             qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
         }
     }
+    mUbloxRover->setEnableIMUOrientationUpdate(!useVESCIMU);
 
     // Fuse position
     CarPositionFuser positionFuser;
