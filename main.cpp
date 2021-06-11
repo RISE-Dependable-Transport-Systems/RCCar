@@ -12,6 +12,7 @@
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
+    bool isSimulation = false;
 
     // --- VehicleState and lower-level control setup ---
     QSharedPointer<CarState> mCarState(new CarState);
@@ -28,15 +29,20 @@ int main(int argc, char *argv[])
     }
     if (mVESCMotorController->isSerialConnected()) {
         mCarMovementController->setMotorController(mVESCMotorController);
-        mCarMovementController->setServoController(mVESCMotorController->getServoController()); // VESC is a special case that can even control the servo
-    }
+
+        // VESC is a special case that can also control the servo
+        const auto servoController = mVESCMotorController->getServoController();
+        servoController->setInvertOutput(true);
+        mCarMovementController->setServoController(servoController);
+    } else
+        isSimulation = true;
 
     // --- Positioning setup ---
     // Odometry, TODO: use VESC feedback instead of simulating
     const int mUpdateVehicleStatePeriod_ms = 25;
     QTimer mUpdateVehicleStateTimer;
     QObject::connect(&mUpdateVehicleStateTimer, &QTimer::timeout, [&](){
-        mCarState->simulationStep(mUpdateVehicleStatePeriod_ms, PosType::odom);
+        mCarState->simulationStep(mUpdateVehicleStatePeriod_ms, (isSimulation ? PosType::fused : PosType::odom));
     });
     mUpdateVehicleStateTimer.start(mUpdateVehicleStatePeriod_ms);
 
@@ -59,11 +65,14 @@ int main(int argc, char *argv[])
     QSharedPointer<UbloxRover> mUbloxRover(new UbloxRover(mCarState));
     foreach(const QSerialPortInfo &portInfo, ports) {
         if (portInfo.manufacturer().toLower().replace("-", "").contains("ublox")) {
-            mUbloxRover->connectSerial(portInfo);
-            qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
+            if (mUbloxRover->connectSerial(portInfo)) {
+                qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
+
+                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 270.0);
+                mUbloxRover->setEnableIMUOrientationUpdate(!useVESCIMU);
+            }
         }
     }
-    mUbloxRover->setEnableIMUOrientationUpdate(!useVESCIMU);
 
     // Fuse position
     CarPositionFuser positionFuser;
