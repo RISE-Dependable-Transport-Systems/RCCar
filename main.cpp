@@ -17,6 +17,10 @@ int main(int argc, char *argv[])
     // --- VehicleState and lower-level control setup ---
     QSharedPointer<CarState> mCarState(new CarState);
     QSharedPointer<CarMovementController> mCarMovementController(new CarMovementController(mCarState));
+    // NOTE: HEADSTART rc car (values read from sdvp pcb)
+    mCarMovementController->setSpeedToRPMFactor(2997.3);
+    mCarState->setAxisDistance(0.36);
+    mCarState->setMaxSteeringAngle(atan(mCarState->getAxisDistance() / 0.67));
 
     // setup and connect VESC
     QSharedPointer<VESCMotorController> mVESCMotorController(new VESCMotorController());
@@ -33,6 +37,9 @@ int main(int argc, char *argv[])
         // VESC is a special case that can also control the servo
         const auto servoController = mVESCMotorController->getServoController();
         servoController->setInvertOutput(true);
+        // NOTE: HEADSTART rc car (values read from sdvp pcb)
+        servoController->setServoRange(0.58);
+        servoController->setServoCenter(0.5);
         mCarMovementController->setServoController(servoController);
     } else
         isSimulation = true;
@@ -80,6 +87,7 @@ int main(int argc, char *argv[])
 
     // --- Autopilot ---
     QSharedPointer<WaypointFollower> mWaypointFollower(new WaypointFollower(mCarMovementController));
+    mWaypointFollower->setPurePursuitRadius(3.0);
 
     // TCP/IP communication towards RControlStation
     PacketInterfaceTCPServer mPacketIFServer;
