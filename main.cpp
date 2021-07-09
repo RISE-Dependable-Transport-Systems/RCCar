@@ -7,6 +7,7 @@
 #include "sdvp_qtcommon/gnss/ubloxrover.h"
 #include "sdvp_qtcommon/waypointfollower.h"
 #include "sdvp_qtcommon/vescmotorcontroller.h"
+#include "sdvp_qtcommon/depthaicamera.h"
 #include "carpositionfuser.h"
 
 int main(int argc, char *argv[])
@@ -88,6 +89,10 @@ int main(int argc, char *argv[])
     // --- Autopilot ---
     QSharedPointer<WaypointFollower> mWaypointFollower(new WaypointFollower(mCarMovementController));
     mWaypointFollower->setPurePursuitRadius(3.0);
+
+    // DepthAI Camera
+    DepthAiCamera mDepthAiCamera;
+    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mWaypointFollower.get(), &WaypointFollower::updateFollowMePoint);
 
     // TCP/IP communication towards RControlStation
     PacketInterfaceTCPServer mPacketIFServer;

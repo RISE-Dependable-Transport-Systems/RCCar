@@ -37,9 +37,12 @@ SOURCES += \
         sdvp_qtcommon/ext/Fusion/FusionBias.c \
         sdvp_qtcommon/ext/Fusion/FusionAhrs.c \
         sdvp_qtcommon/waypointfollower.cpp \
+        sdvp_qtcommon/depthaicamera.cpp \
+        sdvp_qtcommon/jsonstreamparsertcp.cpp \
         carpositionfuser.cpp
 
 HEADERS += \
+        sdvp_qtcommon/coordinatetransforms.h \
         sdvp_qtcommon/carstate.h \
         sdvp_qtcommon/ext/vesc/vescpacket.h \
         sdvp_qtcommon/legacy/datatypes.h \
@@ -62,6 +65,8 @@ HEADERS += \
         sdvp_qtcommon/ext/Fusion/FusionAhrs.h \
         sdvp_qtcommon/ext/Fusion/FusionCalibration.h \
         sdvp_qtcommon/waypointfollower.h \
+        sdvp_qtcommon/depthaicamera.h \
+        sdvp_qtcommon/jsonstreamparsertcp.h \
         carpositionfuser.h
 
 # Default rules for deployment.
