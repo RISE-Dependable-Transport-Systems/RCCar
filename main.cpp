@@ -36,9 +36,9 @@ int main(int argc, char *argv[])
 
         // VESC is a special case that can also control the servo
         const auto servoController = mVESCMotorController->getServoController();
-        servoController->setInvertOutput(true);
+        servoController->setInvertOutput(false);
         // NOTE: HEADSTART rc car (values read from sdvp pcb)
-        servoController->setServoRange(0.58);
+        servoController->setServoRange(-0.58);
         servoController->setServoCenter(0.5);
         mCarMovementController->setServoController(servoController);
     } else
@@ -75,8 +75,8 @@ int main(int argc, char *argv[])
             if (mUbloxRover->connectSerial(portInfo)) {
                 qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
 
-                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 270.0);
-                mUbloxRover->setEnableIMUOrientationUpdate(!useVESCIMU);
+                //mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 270.0);
+                //mUbloxRover->setEnableIMUOrientationUpdate(!useVESCIMU);
             }
         }
     }
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
     mPacketIFServer.setWaypointFollower(mWaypointFollower);
     mPacketIFServer.listen();
 
-    qDebug() << "\n" // by hjw                
+    qDebug() << "\n" // by hjw
              << "                    .------.\n"
              << "                    :|||\"\"\"`.`.\n"
              << "                    :|||     7.`.\n"
