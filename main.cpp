@@ -23,9 +23,22 @@ int main(int argc, char *argv[])
     mCarState->setAxisDistance(0.36);
     mCarState->setMaxSteeringAngle(atan(mCarState->getAxisDistance() / 0.67));
 
+    // GNSS, with optional IMU on u-blox F9R
+    QSharedPointer<UbloxRover> mUbloxRover(new UbloxRover(mCarState));
+    QList<QSerialPortInfo> ports = QSerialPortInfo::availablePorts();
+    foreach(const QSerialPortInfo &portInfo, ports) {
+        if (portInfo.manufacturer().toLower().replace("-", "").contains("ublox")) {
+            if (mUbloxRover->connectSerial(portInfo)) {
+                qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
+
+                //mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 270.0);
+                //mUbloxRover->setEnableIMUOrientationUpdate(!useVESCIMU);
+            }
+        }
+    }
+
     // setup and connect VESC
     QSharedPointer<VESCMotorController> mVESCMotorController(new VESCMotorController());
-    QList<QSerialPortInfo> ports = QSerialPortInfo::availablePorts();
     foreach(const QSerialPortInfo &portInfo, ports) {
         if (portInfo.description().toLower().replace("-", "").contains("chibios")) { // assumption: Serial device with ChibiOS in description is VESC
             mVESCMotorController->connectSerial(portInfo);
@@ -54,6 +67,19 @@ int main(int argc, char *argv[])
     });
     mUpdateVehicleStateTimer.start(mUpdateVehicleStatePeriod_ms);
 
+    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, [&](int tachometer, int tachometer_abs){
+       uint32_t ticks = tachometer_abs;
+       uint32_t wheel_tick_max = 8388607;
+       ticks &=  wheel_tick_max; // Bits 23..31 are set to zero
+
+       static int previous_tachometer = 0;
+       bool direction = ((tachometer - previous_tachometer) > previous_tachometer);
+       previous_tachometer = tachometer;
+       ticks |= direction << 23;
+
+       mUbloxRover->writeOdoToUblox(SINGLE_TICK,ticks);
+    });
+
     bool useVESCIMU = false; // use either VESC or Ublox IMU
     // Optional IMU from VESC
     QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotIMUOrientation, [&](double roll, double pitch, double yaw){
@@ -68,19 +94,6 @@ int main(int argc, char *argv[])
         mCarState->setPosition(tmpIMUPos);
     });
     mVESCMotorController->setEnableIMUOrientationUpdate(useVESCIMU);
-
-    // GNSS, with optional IMU on u-blox F9R
-    QSharedPointer<UbloxRover> mUbloxRover(new UbloxRover(mCarState));
-    foreach(const QSerialPortInfo &portInfo, ports) {
-        if (portInfo.manufacturer().toLower().replace("-", "").contains("ublox")) {
-            if (mUbloxRover->connectSerial(portInfo)) {
-                qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
-
-                //mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 270.0);
-                //mUbloxRover->setEnableIMUOrientationUpdate(!useVESCIMU);
-            }
-        }
-    }
 
     // Fuse position
     CarPositionFuser positionFuser;
