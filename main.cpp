@@ -50,9 +50,9 @@ int main(int argc, char *argv[])
 
         // VESC is a special case that can also control the servo
         const auto servoController = mVESCMotorController->getServoController();
-        servoController->setInvertOutput(false);
+        servoController->setInvertOutput(true);
         // NOTE: HEADSTART rc car (values read from sdvp pcb)
-        servoController->setServoRange(-0.58);
+        servoController->setServoRange(0.58);
         servoController->setServoCenter(0.5);
         mCarMovementController->setServoController(servoController);
     } else
