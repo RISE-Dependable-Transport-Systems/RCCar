@@ -31,8 +31,8 @@ int main(int argc, char *argv[])
             if (mUbloxRover->connectSerial(portInfo)) {
                 qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
 
-                //mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 270.0);
-                //mUbloxRover->setEnableIMUOrientationUpdate(!useVESCIMU);
+                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 270.0);
+                mUbloxRover->setEnableIMUOrientationUpdate(false); // Whether to use raw IMU data from F9R
             }
         }
     }
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
         const auto servoController = mVESCMotorController->getServoController();
         servoController->setInvertOutput(true);
         // NOTE: HEADSTART rc car (values read from sdvp pcb)
-        servoController->setServoRange(0.58);
+        servoController->setServoRange(0.50);
         servoController->setServoCenter(0.5);
         mCarMovementController->setServoController(servoController);
     } else
