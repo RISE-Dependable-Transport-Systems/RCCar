@@ -113,6 +113,7 @@ int main(int argc, char *argv[])
     mPacketIFServer.setMovementController(mCarMovementController);
     mPacketIFServer.setUbloxRover(mUbloxRover);
     mPacketIFServer.setWaypointFollower(mWaypointFollower);
+    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, &mPacketIFServer, &PacketInterfaceTCPServer::updateMotorControllerStatus);
     mPacketIFServer.listen();
 
     qDebug() << "\n" // by hjw
