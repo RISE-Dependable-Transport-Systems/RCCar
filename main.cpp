@@ -103,9 +103,29 @@ int main(int argc, char *argv[])
     QSharedPointer<WaypointFollower> mWaypointFollower(new WaypointFollower(mCarMovementController));
     mWaypointFollower->setPurePursuitRadius(3.0);
 
-    // DepthAI Camera
+    // DepthAI Camera & Follow Point
     DepthAiCamera mDepthAiCamera;
-    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mWaypointFollower.get(), &WaypointFollower::updateFollowMePoint);
+    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, [&](const PosPoint &obj){
+        // 1. transform obj from vehicle frame to ENU frame
+        // TODO: Take offset from camera to middle of backaxle into account
+        PosPoint carPosition = mCarState->getPosition(PosType::fused);
+
+        // clockwise rotation
+        double currYaw_rad = (carPosition.getYaw() + 90.0) * (M_PI / 180.0);
+        double newX = cos(currYaw_rad)*obj.getX() + sin(currYaw_rad)*obj.getY();
+        double newY = -sin(currYaw_rad)*obj.getX() + cos(currYaw_rad)*obj.getY();
+
+        // translation
+        newX += carPosition.getX();
+        newY += carPosition.getY();
+
+        PosPoint pointInEnuFrame;
+        pointInEnuFrame.setX(newX);
+        pointInEnuFrame.setY(newY);
+
+        // 2. use point for follow point function
+        mWaypointFollower->updateFollowPoint(pointInEnuFrame);
+    });
 
     // TCP/IP communication towards RControlStation
     PacketInterfaceTCPServer mPacketIFServer;
