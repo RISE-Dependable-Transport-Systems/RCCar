@@ -123,6 +123,9 @@ int main(int argc, char *argv[])
         pointInEnuFrame.setX(newX);
         pointInEnuFrame.setY(newY);
 
+        // set timestamp
+        pointInEnuFrame.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()).msecsSinceStartOfDay());
+
         // 2. use point for follow point function
         mWaypointFollower->updateFollowPoint(pointInEnuFrame);
     });
