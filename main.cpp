@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
         tmpIMUPos.setPitch(pitch);
         tmpIMUPos.setYaw(yaw);
         // VESC does not provide timestamp
-        tmpIMUPos.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()).msecsSinceStartOfDay());
+        tmpIMUPos.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()));
 
         mCarState->setPosition(tmpIMUPos);
     });
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
         pointInEnuFrame.setY(newY);
 
         // set timestamp
-        pointInEnuFrame.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()).msecsSinceStartOfDay());
+        pointInEnuFrame.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()));
 
         // 2. use point for follow point function
         mWaypointFollower->updateFollowPoint(pointInEnuFrame);
