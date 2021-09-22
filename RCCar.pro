@@ -23,6 +23,7 @@ SOURCES += \
         sdvp_qtcommon/legacy/locpoint.cpp \
         sdvp_qtcommon/legacy/packet.cpp \
         sdvp_qtcommon/legacy/tcpserversimple.cpp \
+        sdvp_qtcommon/simplewatchdog.cpp \
         sdvp_qtcommon/vbytearray.cpp \
         sdvp_qtcommon/legacy/packetinterfacetcpserver.cpp \
         sdvp_qtcommon/movementcontroller.cpp \
@@ -51,6 +52,7 @@ HEADERS += \
         sdvp_qtcommon/legacy/locpoint.h \
         sdvp_qtcommon/legacy/packet.h \
         sdvp_qtcommon/legacy/tcpserversimple.h \
+        sdvp_qtcommon/simplewatchdog.h \
         sdvp_qtcommon/vbytearray.h \
         sdvp_qtcommon/legacy/packetinterfacetcpserver.h \
         sdvp_qtcommon/movementcontroller.h \

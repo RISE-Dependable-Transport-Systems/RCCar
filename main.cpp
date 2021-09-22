@@ -1,6 +1,7 @@
 #include <QCoreApplication>
 #include <QSerialPortInfo>
 #include <QDateTime>
+#include "sdvp_qtcommon/simplewatchdog.h"
 #include "sdvp_qtcommon/legacy/packetinterfacetcpserver.h"
 #include "sdvp_qtcommon/carstate.h"
 #include "sdvp_qtcommon/carmovementcontroller.h"
@@ -138,6 +139,9 @@ int main(int argc, char *argv[])
     mPacketIFServer.setWaypointFollower(mWaypointFollower);
     QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, &mPacketIFServer, &PacketInterfaceTCPServer::updateMotorControllerStatus);
     mPacketIFServer.listen();
+
+    // Watchdog that warns when EventLoop is slowed down
+    SimpleWatchdog watchdog;
 
     qDebug() << "\n" // by hjw
              << "                    .------.\n"
