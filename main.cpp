@@ -81,20 +81,19 @@ int main(int argc, char *argv[])
        mUbloxRover->writeOdoToUblox(SINGLE_TICK,ticks);
     });
 
-    bool useVESCIMU = false; // use either VESC or Ublox IMU
-    // Optional IMU from VESC
+    // Take roll & pitch from VESC's IMU
     QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotIMUOrientation, [&](double roll, double pitch, double yaw){
         PosPoint tmpIMUPos = mCarState->getPosition(PosType::IMU);
 
         tmpIMUPos.setRoll(roll);
         tmpIMUPos.setPitch(pitch);
-        tmpIMUPos.setYaw(yaw);
+        // tmpIMUPos.setYaw(yaw);
         // VESC does not provide timestamp
         tmpIMUPos.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()));
 
         mCarState->setPosition(tmpIMUPos);
     });
-    mVESCMotorController->setEnableIMUOrientationUpdate(useVESCIMU);
+    mVESCMotorController->setEnableIMUOrientationUpdate(true);
 
     // Fuse position
     CarPositionFuser positionFuser;
