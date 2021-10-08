@@ -88,6 +88,8 @@ int main(int argc, char *argv[])
         tmpIMUPos.setRoll(roll);
         tmpIMUPos.setPitch(pitch);
         // tmpIMUPos.setYaw(yaw);
+        Q_UNUSED(yaw)
+
         // VESC does not provide timestamp
         tmpIMUPos.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()));
 
@@ -101,7 +103,8 @@ int main(int argc, char *argv[])
 
     // --- Autopilot ---
     QSharedPointer<WaypointFollower> mWaypointFollower(new WaypointFollower(mCarMovementController));
-    mWaypointFollower->setPurePursuitRadius(3.0);
+    mWaypointFollower->setPurePursuitRadius(1.0);
+    mWaypointFollower->setRepeatRoute(true);
 
     // DepthAI Camera & Follow Point
     DepthAiCamera mDepthAiCamera;
