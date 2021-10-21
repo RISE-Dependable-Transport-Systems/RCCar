@@ -81,14 +81,13 @@ int main(int argc, char *argv[])
        mUbloxRover->writeOdoToUblox(SINGLE_TICK,ticks);
     });
 
-    // Take roll & pitch from VESC's IMU
+    // Take roll & pitch, yaw from VESC's IMU
     QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotIMUOrientation, [&](double roll, double pitch, double yaw){
         PosPoint tmpIMUPos = mCarState->getPosition(PosType::IMU);
 
         tmpIMUPos.setRoll(roll);
         tmpIMUPos.setPitch(pitch);
-        // tmpIMUPos.setYaw(yaw);
-        Q_UNUSED(yaw)
+        tmpIMUPos.setYaw(yaw);
 
         // VESC does not provide timestamp
         tmpIMUPos.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()));
