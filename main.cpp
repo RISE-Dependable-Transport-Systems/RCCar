@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
         isSimulation = true;
 
     // --- Positioning setup ---
-    // Odometry, TODO: use VESC feedback instead of simulating
+    // Odometry
     const int mUpdateVehicleStatePeriod_ms = 25;
     QTimer mUpdateVehicleStateTimer;
     QObject::connect(&mUpdateVehicleStateTimer, &QTimer::timeout, [&](){
@@ -68,7 +68,8 @@ int main(int argc, char *argv[])
     });
     mUpdateVehicleStateTimer.start(mUpdateVehicleStatePeriod_ms);
 
-    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, [&](int tachometer, int tachometer_abs){
+    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, [&](double rpm, int tachometer, int tachometer_abs){
+       Q_UNUSED(rpm)
        uint32_t ticks = tachometer_abs;
        uint32_t wheel_tick_max = 8388607;
        ticks &=  wheel_tick_max; // Bits 23..31 are set to zero
