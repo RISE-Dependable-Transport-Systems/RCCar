@@ -104,7 +104,8 @@ int main(int argc, char *argv[])
     // --- Autopilot ---
     QSharedPointer<WaypointFollower> mWaypointFollower(new WaypointFollower(mCarMovementController));
     mWaypointFollower->setPurePursuitRadius(1.0);
-    mWaypointFollower->setRepeatRoute(true);
+    mWaypointFollower->setRepeatRoute(false);
+    mWaypointFollower->logData(false);
 
     // DepthAI Camera & Follow Point
     DepthAiCamera mDepthAiCamera;
