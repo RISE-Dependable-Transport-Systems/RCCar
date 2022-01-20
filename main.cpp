@@ -86,7 +86,8 @@ int main(int argc, char *argv[])
        bool direction = ((tachometer - previousTachometer) > previousTachometer);
        ticks |= direction << 23;
 
-       mUbloxRover->writeOdoToUblox(SINGLE_TICK,ticks);
+       // TODO: input to u-blox disabled for now, seems to cause problems (lost fusion mode on F9R) and needs testing/debugging
+       // mUbloxRover->writeOdoToUblox(SINGLE_TICK,ticks);
 
        // TODO: the following should be signal/slot from (not yet implemented) MovementController::updatedOdomPositionAndYaw to CarPositionFuser
        PosPoint tmpOdomPos = mCarState->getPosition(PosType::odom);
@@ -115,41 +116,14 @@ int main(int argc, char *argv[])
     });
     mVESCMotorController->setEnableIMUOrientationUpdate(true);
 
-
-
-
     // --- Autopilot ---
     QSharedPointer<WaypointFollower> mWaypointFollower(new WaypointFollower(mCarMovementController));
     mWaypointFollower->setPurePursuitRadius(1.0);
     mWaypointFollower->setRepeatRoute(false);
-    mWaypointFollower->logData(false);
 
     // DepthAI Camera & Follow Point
     DepthAiCamera mDepthAiCamera;
-    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, [&](const PosPoint &obj){
-        // 1. transform obj from vehicle frame to ENU frame
-        // TODO: Take offset from camera to middle of backaxle into account
-        PosPoint carPosition = mCarState->getPosition(PosType::fused);
-
-        // clockwise rotation
-        double currYaw_rad = (carPosition.getYaw() + 90.0) * (M_PI / 180.0);
-        double newX = cos(currYaw_rad)*obj.getX() + sin(currYaw_rad)*obj.getY();
-        double newY = -sin(currYaw_rad)*obj.getX() + cos(currYaw_rad)*obj.getY();
-
-        // translation
-        newX += carPosition.getX();
-        newY += carPosition.getY();
-
-        PosPoint pointInEnuFrame;
-        pointInEnuFrame.setX(newX);
-        pointInEnuFrame.setY(newY);
-
-        // set timestamp
-        pointInEnuFrame.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()));
-
-        // 2. use point for follow point function
-        mWaypointFollower->updateFollowPoint(pointInEnuFrame);
-    });
+    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mWaypointFollower.get(), &WaypointFollower::updateFollowPointInVehicleFrame);
 
     // TCP/IP communication towards RControlStation
     PacketInterfaceTCPServer mPacketIFServer;
