@@ -5,6 +5,7 @@
 #include "sdvp_qtcommon/legacy/packetinterfacetcpserver.h"
 #include "sdvp_qtcommon/carstate.h"
 #include "sdvp_qtcommon/carmovementcontroller.h"
+#include "sdvp_qtcommon/bno055orientationupdater.h"
 #include "sdvp_qtcommon/gnss/ubloxrover.h"
 #include "sdvp_qtcommon/waypointfollower.h"
 #include "sdvp_qtcommon/vescmotorcontroller.h"
@@ -24,23 +25,9 @@ int main(int argc, char *argv[])
     mCarState->setAxisDistance(0.36);
     mCarState->setMaxSteeringAngle(atan(mCarState->getAxisDistance() / 0.67));
 
-    // GNSS, with optional IMU on u-blox F9R
-    QSharedPointer<UbloxRover> mUbloxRover(new UbloxRover(mCarState));
-    QList<QSerialPortInfo> ports = QSerialPortInfo::availablePorts();
-    foreach(const QSerialPortInfo &portInfo, ports) {
-        if (portInfo.manufacturer().toLower().replace("-", "").contains("ublox")) {
-            if (mUbloxRover->connectSerial(portInfo)) {
-                qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
-
-                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 270.0);
-                mUbloxRover->setEnableIMUOrientationUpdate(false); // Whether to use raw IMU data from F9R
-            }
-        }
-    }
-
     // setup and connect VESC
     QSharedPointer<VESCMotorController> mVESCMotorController(new VESCMotorController());
-    foreach(const QSerialPortInfo &portInfo, ports) {
+    foreach(const QSerialPortInfo &portInfo, QSerialPortInfo::availablePorts()) {
         if (portInfo.description().toLower().replace("-", "").contains("chibios")) { // assumption: Serial device with ChibiOS in description is VESC
             mVESCMotorController->connectSerial(portInfo);
             qDebug() << "VESCMotorController connected to:" << portInfo.systemLocation();
@@ -63,7 +50,16 @@ int main(int argc, char *argv[])
     // Position Fuser
     // TODO: refactor inputs to CarPositionFuser (need to be moved to respective classes). This was quickly implemented for HEADSTART
     CarPositionFuser positionFuser;
-    QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndYaw, &positionFuser, &CarPositionFuser::correctPositionAndYawGNSS);
+
+    // IMU
+    bool useVESCIMU = true;
+    QSharedPointer<IMUOrientationUpdater> mIMUOrientationUpdater;
+    if (useVESCIMU)
+        mIMUOrientationUpdater = mVESCMotorController->getIMUOrientationUpdater(mCarState);
+    else
+        mIMUOrientationUpdater.reset(new BNO055OrientationUpdater(mCarState, "/dev/i2c-3"));
+    // Take roll & pitch, yaw from VESC's IMU
+    QObject::connect(mIMUOrientationUpdater.get(), &IMUOrientationUpdater::updatedIMUOrientation, &positionFuser, &CarPositionFuser::correctPositionAndYawIMU);
 
     // Odometry
     // TODO: no real PosType::odom update implemented right now. This is just for simulation
@@ -99,22 +95,18 @@ int main(int argc, char *argv[])
        previousTachometer = tachometer;
     });
 
-    // Take roll & pitch, yaw from VESC's IMU
-    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotIMUOrientation, [&](double roll, double pitch, double yaw){
-        PosPoint tmpIMUPos = mCarState->getPosition(PosType::IMU);
+    // GNSS (with fused IMU when using u-blox F9R)
+    QSharedPointer<UbloxRover> mUbloxRover(new UbloxRover(mCarState));
+    foreach(const QSerialPortInfo &portInfo, QSerialPortInfo::availablePorts()) {
+        if (portInfo.manufacturer().toLower().replace("-", "").contains("ublox")) {
+            if (mUbloxRover->connectSerial(portInfo)) {
+                qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
 
-        tmpIMUPos.setRoll(roll);
-        tmpIMUPos.setPitch(pitch);
-        tmpIMUPos.setYaw(yaw);
-
-        // VESC does not provide timestamp
-        tmpIMUPos.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()));
-
-        mCarState->setPosition(tmpIMUPos);
-        positionFuser.correctPositionAndYawIMU(mCarState); // TODO: this should be signal/slot from (not yet implemented) IMUDataSource to CarPositionFuser
-                                                           //       (make sure uncorrected yaw does not become visible when moving to signal/slot)
-    });
-    mVESCMotorController->setEnableIMUOrientationUpdate(true);
+                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 270.0);
+            }
+        }
+    }
+    QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndYaw, &positionFuser, &CarPositionFuser::correctPositionAndYawGNSS);
 
     // --- Autopilot ---
     QSharedPointer<WaypointFollower> mWaypointFollower(new WaypointFollower(mCarMovementController));
