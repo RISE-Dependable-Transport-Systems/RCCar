@@ -6,7 +6,7 @@ CarPositionFuser::CarPositionFuser(QObject *parent) : QObject(parent)
 }
 
 // "Fusion" currently means using the GNSS position whenever it is updated
-// TODO: consider GNSS age, use GNSS yaw for IMU offset and weigh depending on speed, clamp IMU when stationary, ...
+// TODO: consider GNSS age, use GNSS yaw for IMU offset and weigh depending on speed/distance, ...
 // TODO: sanity checks, e.g., yaw (and position) should not jump
 void CarPositionFuser::correctPositionAndYawGNSS(QSharedPointer<VehicleState> vehicleState, bool fused)
 {
@@ -14,21 +14,13 @@ void CarPositionFuser::correctPositionAndYawGNSS(QSharedPointer<VehicleState> ve
     PosPoint posIMU = vehicleState->getPosition(PosType::IMU);
     PosPoint posFusedTmp = vehicleState->getPosition(PosType::fused);
 
+    // TODO "fusion" of GNSS and IMU-based dead reckoning
     posFusedTmp.setXY(posGNSS.getX(), posGNSS.getY());
     posFusedTmp.setHeight(posGNSS.getHeight());
 
-    if (fused) { // use GNSS yaw directly if that was already fused (e.g., F9R).
+    if (fused) // use GNSS yaw directly if that was already fused (e.g., F9R).
         posFusedTmp.setYaw(posGNSS.getYaw());
-
-        // NOTE: for HEADSTART, use first fused yaw to set offset for 6 DoF IMU, initial position for dead reckoning
-        static bool firstTimeFused = true;
-        if (firstTimeFused) {
-            mPosIMUyawOffset = posGNSS.getYaw() - posIMU.getYaw();
-            posIMU.setXY(posGNSS.getX(), posGNSS.getY());
-            vehicleState->setPosition(posIMU);
-            firstTimeFused = false;
-        }
-    } else {
+    else {
         // TODO: offset by GNSS yaw to correct drift
         posFusedTmp.setYaw(posIMU.getYaw());
     }
@@ -48,6 +40,7 @@ void CarPositionFuser::correctPositionAndYawOdom(QSharedPointer<VehicleState> ve
     double yawRad = posIMU.getYaw() / (180.0/M_PI);
     posIMU.setXY(posIMU.getX() + cos(-yawRad) * distanceDriven,
                  posIMU.getY() + sin(-yawRad) * distanceDriven);
+    // TODO: write PosType::fused when GNSS not in fused mode (F9R)
     vehicleState->setPosition(posIMU);
 }
 
@@ -76,7 +69,7 @@ void CarPositionFuser::correctPositionAndYawIMU(QSharedPointer<VehicleState> veh
     }
 
     // 2. apply offset
-    // TODO: normalization
+    // TODO: normalization, write PosType::fused when GNSS not in fused mode (F9R)
     posIMU.setYaw(posIMU.getYaw() + mPosIMUyawOffset);
     vehicleState->setPosition(posIMU);
 }
