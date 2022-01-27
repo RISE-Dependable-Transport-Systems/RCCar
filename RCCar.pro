@@ -44,7 +44,7 @@ SOURCES += \
         sdvp_qtcommon/waypointfollower.cpp \
         sdvp_qtcommon/depthaicamera.cpp \
         sdvp_qtcommon/jsonstreamparsertcp.cpp \
-        carpositionfuser.cpp
+        sdvp_qtcommon/sdvpvehiclepositionfuser.cpp
 
 HEADERS += \
         sdvp_qtcommon/coordinatetransforms.h \
@@ -77,7 +77,7 @@ HEADERS += \
         sdvp_qtcommon/waypointfollower.h \
         sdvp_qtcommon/depthaicamera.h \
         sdvp_qtcommon/jsonstreamparsertcp.h \
-        carpositionfuser.h
+        sdvp_qtcommon/sdvpvehiclepositionfuser.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

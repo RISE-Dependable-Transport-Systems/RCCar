@@ -10,7 +10,7 @@
 #include "sdvp_qtcommon/waypointfollower.h"
 #include "sdvp_qtcommon/vescmotorcontroller.h"
 #include "sdvp_qtcommon/depthaicamera.h"
-#include "carpositionfuser.h"
+#include "sdvp_qtcommon/sdvpvehiclepositionfuser.h"
 
 int main(int argc, char *argv[])
 {
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 
     // --- Positioning setup ---
     // Position Fuser
-    CarPositionFuser positionFuser;
+    SDVPVehiclePositionFuser positionFuser;
 
     // GNSS (with fused IMU when using u-blox F9R)
     QSharedPointer<UbloxRover> mUbloxRover(new UbloxRover(mCarState));
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
             }
         }
     }
-    QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndYaw, &positionFuser, &CarPositionFuser::correctPositionAndYawGNSS);
+    QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndYaw, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawGNSS);
 
     // IMU
     bool useVESCIMU = true;
@@ -75,10 +75,10 @@ int main(int argc, char *argv[])
         mIMUOrientationUpdater = mVESCMotorController->getIMUOrientationUpdater(mCarState);
     else
         mIMUOrientationUpdater.reset(new BNO055OrientationUpdater(mCarState, "/dev/i2c-3"));
-    QObject::connect(mIMUOrientationUpdater.get(), &IMUOrientationUpdater::updatedIMUOrientation, &positionFuser, &CarPositionFuser::correctPositionAndYawIMU);
+    QObject::connect(mIMUOrientationUpdater.get(), &IMUOrientationUpdater::updatedIMUOrientation, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawIMU);
 
     // Odometry
-    QObject::connect(mCarMovementController.get(), &CarMovementController::updatedOdomPositionAndYaw, &positionFuser, &CarPositionFuser::correctPositionAndYawOdom);
+    QObject::connect(mCarMovementController.get(), &CarMovementController::updatedOdomPositionAndYaw, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawOdom);
 
     // TODO: input to u-blox disabled for now, seems to cause problems (lost fusion mode on F9R) and needs testing/debugging
 //    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, [&](double rpm, int tachometer, int tachometer_abs){
