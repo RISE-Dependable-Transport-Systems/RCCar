@@ -60,26 +60,43 @@ int main(int argc, char *argv[])
         isSimulation = true;
 
     // --- Positioning setup ---
+    // Position Fuser
+    // TODO: refactor inputs to CarPositionFuser (need to be moved to respective classes). This was quickly implemented for HEADSTART
+    CarPositionFuser positionFuser;
+    QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndYaw, &positionFuser, &CarPositionFuser::correctPositionAndYawGNSS);
+
     // Odometry
+    // TODO: no real PosType::odom update implemented right now. This is just for simulation
     const int mUpdateVehicleStatePeriod_ms = 25;
     QTimer mUpdateVehicleStateTimer;
-    QObject::connect(&mUpdateVehicleStateTimer, &QTimer::timeout, [&](){
-        mCarState->simulationStep(mUpdateVehicleStatePeriod_ms, (isSimulation ? PosType::fused : PosType::odom));
-    });
-    mUpdateVehicleStateTimer.start(mUpdateVehicleStatePeriod_ms);
+    if (isSimulation) {
+        QObject::connect(&mUpdateVehicleStateTimer, &QTimer::timeout, [&](){
+            mCarState->simulationStep(mUpdateVehicleStatePeriod_ms, PosType::fused);
+        });
+        mUpdateVehicleStateTimer.start(mUpdateVehicleStatePeriod_ms);
+    }
 
     QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, [&](double rpm, int tachometer, int tachometer_abs){
        Q_UNUSED(rpm)
        uint32_t ticks = tachometer_abs;
-       uint32_t wheel_tick_max = 8388607;
-       ticks &=  wheel_tick_max; // Bits 23..31 are set to zero
+       uint32_t wheelTickMax = 8388607;
+       ticks &=  wheelTickMax; // Bits 31..23 are set to zero
 
-       static int previous_tachometer = 0;
-       bool direction = ((tachometer - previous_tachometer) > previous_tachometer);
-       previous_tachometer = tachometer;
+       static int previousTachometer = 0;
+       bool direction = ((tachometer - previousTachometer) > previousTachometer);
        ticks |= direction << 23;
 
-       mUbloxRover->writeOdoToUblox(SINGLE_TICK,ticks);
+       // TODO: input to u-blox disabled for now, seems to cause problems (lost fusion mode on F9R) and needs testing/debugging
+       // mUbloxRover->writeOdoToUblox(SINGLE_TICK,ticks);
+
+       // TODO: the following should be signal/slot from (not yet implemented) MovementController::updatedOdomPositionAndYaw to CarPositionFuser
+       PosPoint tmpOdomPos = mCarState->getPosition(PosType::odom);
+       // VESC does not provide timestamp
+       tmpOdomPos.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()));
+       mCarState->setPosition(tmpOdomPos);
+       positionFuser.correctPositionAndYawOdom(mCarState, (tachometer - previousTachometer)/mCarMovementController->getSpeedToRPMFactor()*10.0); // Note: essentially divides tachometer by 6, not sure why needed for VESC
+
+       previousTachometer = tachometer;
     });
 
     // Take roll & pitch, yaw from VESC's IMU
@@ -94,45 +111,19 @@ int main(int argc, char *argv[])
         tmpIMUPos.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()));
 
         mCarState->setPosition(tmpIMUPos);
+        positionFuser.correctPositionAndYawIMU(mCarState); // TODO: this should be signal/slot from (not yet implemented) IMUDataSource to CarPositionFuser
+                                                           //       (make sure uncorrected yaw does not become visible when moving to signal/slot)
     });
     mVESCMotorController->setEnableIMUOrientationUpdate(true);
-
-    // Fuse position
-    CarPositionFuser positionFuser;
-    QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndYaw, &positionFuser, &CarPositionFuser::correctPositionAndYawGNSS);
 
     // --- Autopilot ---
     QSharedPointer<WaypointFollower> mWaypointFollower(new WaypointFollower(mCarMovementController));
     mWaypointFollower->setPurePursuitRadius(1.0);
     mWaypointFollower->setRepeatRoute(false);
-    mWaypointFollower->logData(false);
 
     // DepthAI Camera & Follow Point
     DepthAiCamera mDepthAiCamera;
-    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, [&](const PosPoint &obj){
-        // 1. transform obj from vehicle frame to ENU frame
-        // TODO: Take offset from camera to middle of backaxle into account
-        PosPoint carPosition = mCarState->getPosition(PosType::fused);
-
-        // clockwise rotation
-        double currYaw_rad = (carPosition.getYaw() + 90.0) * (M_PI / 180.0);
-        double newX = cos(currYaw_rad)*obj.getX() + sin(currYaw_rad)*obj.getY();
-        double newY = -sin(currYaw_rad)*obj.getX() + cos(currYaw_rad)*obj.getY();
-
-        // translation
-        newX += carPosition.getX();
-        newY += carPosition.getY();
-
-        PosPoint pointInEnuFrame;
-        pointInEnuFrame.setX(newX);
-        pointInEnuFrame.setY(newY);
-
-        // set timestamp
-        pointInEnuFrame.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()));
-
-        // 2. use point for follow point function
-        mWaypointFollower->updateFollowPoint(pointInEnuFrame);
-    });
+    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mWaypointFollower.get(), &WaypointFollower::updateFollowPointInVehicleFrame);
 
     // TCP/IP communication towards RControlStation
     PacketInterfaceTCPServer mPacketIFServer;

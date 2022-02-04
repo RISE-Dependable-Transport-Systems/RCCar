@@ -11,9 +11,13 @@ class CarPositionFuser : public QObject
 public:
     explicit CarPositionFuser(QObject *parent = nullptr);
     void correctPositionAndYawGNSS(QSharedPointer<VehicleState> vehicleState, bool fused);
+    void correctPositionAndYawOdom(QSharedPointer<VehicleState> vehicleState, double distanceDriven);
+    void correctPositionAndYawIMU(QSharedPointer<VehicleState> vehicleState);
 
 signals:
 
+private:
+    double mPosIMUyawOffset = 0.0;
 };
 
 #endif // CARPOSITIONFUSER_H
