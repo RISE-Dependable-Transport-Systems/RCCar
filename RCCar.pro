@@ -17,6 +17,9 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
+        sdvp_qtcommon/ext/pi-bno055/i2c_bno055.c \
+        sdvp_qtcommon/bno055orientationupdater.cpp \
+        sdvp_qtcommon/imuorientationupdater.cpp \
         sdvp_qtcommon/objectstate.cpp \
         sdvp_qtcommon/carstate.cpp \
         sdvp_qtcommon/ext/vesc/vescpacket.cpp \
@@ -41,10 +44,13 @@ SOURCES += \
         sdvp_qtcommon/waypointfollower.cpp \
         sdvp_qtcommon/depthaicamera.cpp \
         sdvp_qtcommon/jsonstreamparsertcp.cpp \
-        carpositionfuser.cpp
+        sdvp_qtcommon/sdvpvehiclepositionfuser.cpp
 
 HEADERS += \
         sdvp_qtcommon/coordinatetransforms.h \
+        sdvp_qtcommon/ext/pi-bno055/getbno055.h \
+        sdvp_qtcommon/bno055orientationupdater.h \
+        sdvp_qtcommon/imuorientationupdater.h \
         sdvp_qtcommon/objectstate.h \
         sdvp_qtcommon/carstate.h \
         sdvp_qtcommon/ext/vesc/vescpacket.h \
@@ -71,7 +77,7 @@ HEADERS += \
         sdvp_qtcommon/waypointfollower.h \
         sdvp_qtcommon/depthaicamera.h \
         sdvp_qtcommon/jsonstreamparsertcp.h \
-        carpositionfuser.h
+        sdvp_qtcommon/sdvpvehiclepositionfuser.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

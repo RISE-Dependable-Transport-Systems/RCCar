@@ -5,16 +5,18 @@
 #include "sdvp_qtcommon/legacy/packetinterfacetcpserver.h"
 #include "sdvp_qtcommon/carstate.h"
 #include "sdvp_qtcommon/carmovementcontroller.h"
+#include "sdvp_qtcommon/bno055orientationupdater.h"
 #include "sdvp_qtcommon/gnss/ubloxrover.h"
 #include "sdvp_qtcommon/waypointfollower.h"
 #include "sdvp_qtcommon/vescmotorcontroller.h"
 #include "sdvp_qtcommon/depthaicamera.h"
-#include "carpositionfuser.h"
+#include "sdvp_qtcommon/sdvpvehiclepositionfuser.h"
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    bool isSimulation = false;
+    const int mUpdateVehicleStatePeriod_ms = 25;
+    QTimer mUpdateVehicleStateTimer;
 
     // --- VehicleState and lower-level control setup ---
     QSharedPointer<CarState> mCarState(new CarState);
@@ -24,23 +26,9 @@ int main(int argc, char *argv[])
     mCarState->setAxisDistance(0.36);
     mCarState->setMaxSteeringAngle(atan(mCarState->getAxisDistance() / 0.67));
 
-    // GNSS, with optional IMU on u-blox F9R
-    QSharedPointer<UbloxRover> mUbloxRover(new UbloxRover(mCarState));
-    QList<QSerialPortInfo> ports = QSerialPortInfo::availablePorts();
-    foreach(const QSerialPortInfo &portInfo, ports) {
-        if (portInfo.manufacturer().toLower().replace("-", "").contains("ublox")) {
-            if (mUbloxRover->connectSerial(portInfo)) {
-                qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
-
-                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 270.0);
-                mUbloxRover->setEnableIMUOrientationUpdate(false); // Whether to use raw IMU data from F9R
-            }
-        }
-    }
-
-    // setup and connect VESC
+    // setup and connect VESC, simulate movements if unable to connect
     QSharedPointer<VESCMotorController> mVESCMotorController(new VESCMotorController());
-    foreach(const QSerialPortInfo &portInfo, ports) {
+    foreach(const QSerialPortInfo &portInfo, QSerialPortInfo::availablePorts()) {
         if (portInfo.description().toLower().replace("-", "").contains("chibios")) { // assumption: Serial device with ChibiOS in description is VESC
             mVESCMotorController->connectSerial(portInfo);
             qDebug() << "VESCMotorController connected to:" << portInfo.systemLocation();
@@ -56,65 +44,58 @@ int main(int argc, char *argv[])
         servoController->setServoRange(0.50);
         servoController->setServoCenter(0.5);
         mCarMovementController->setServoController(servoController);
-    } else
-        isSimulation = true;
-
-    // --- Positioning setup ---
-    // Position Fuser
-    // TODO: refactor inputs to CarPositionFuser (need to be moved to respective classes). This was quickly implemented for HEADSTART
-    CarPositionFuser positionFuser;
-    QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndYaw, &positionFuser, &CarPositionFuser::correctPositionAndYawGNSS);
-
-    // Odometry
-    // TODO: no real PosType::odom update implemented right now. This is just for simulation
-    const int mUpdateVehicleStatePeriod_ms = 25;
-    QTimer mUpdateVehicleStateTimer;
-    if (isSimulation) {
+    } else {
         QObject::connect(&mUpdateVehicleStateTimer, &QTimer::timeout, [&](){
             mCarState->simulationStep(mUpdateVehicleStatePeriod_ms, PosType::fused);
         });
         mUpdateVehicleStateTimer.start(mUpdateVehicleStatePeriod_ms);
     }
 
-    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, [&](double rpm, int tachometer, int tachometer_abs){
-       Q_UNUSED(rpm)
-       uint32_t ticks = tachometer_abs;
-       uint32_t wheelTickMax = 8388607;
-       ticks &=  wheelTickMax; // Bits 31..23 are set to zero
+    // --- Positioning setup ---
+    // Position Fuser
+    SDVPVehiclePositionFuser positionFuser;
 
-       static int previousTachometer = 0;
-       bool direction = ((tachometer - previousTachometer) > previousTachometer);
-       ticks |= direction << 23;
+    // GNSS (with fused IMU when using u-blox F9R)
+    QSharedPointer<UbloxRover> mUbloxRover(new UbloxRover(mCarState));
+    foreach(const QSerialPortInfo &portInfo, QSerialPortInfo::availablePorts()) {
+        if (portInfo.manufacturer().toLower().replace("-", "").contains("ublox")) {
+            if (mUbloxRover->connectSerial(portInfo)) {
+                qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
 
-       // TODO: input to u-blox disabled for now, seems to cause problems (lost fusion mode on F9R) and needs testing/debugging
-       // mUbloxRover->writeOdoToUblox(SINGLE_TICK,ticks);
+                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 270.0);
+            }
+        }
+    }
+    QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndYaw, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawGNSS);
 
-       // TODO: the following should be signal/slot from (not yet implemented) MovementController::updatedOdomPositionAndYaw to CarPositionFuser
-       PosPoint tmpOdomPos = mCarState->getPosition(PosType::odom);
-       // VESC does not provide timestamp
-       tmpOdomPos.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()));
-       mCarState->setPosition(tmpOdomPos);
-       positionFuser.correctPositionAndYawOdom(mCarState, (tachometer - previousTachometer)/mCarMovementController->getSpeedToRPMFactor()*10.0); // Note: essentially divides tachometer by 6, not sure why needed for VESC
+    // IMU
+    bool useVESCIMU = true;
+    QSharedPointer<IMUOrientationUpdater> mIMUOrientationUpdater;
+    if (useVESCIMU)
+        mIMUOrientationUpdater = mVESCMotorController->getIMUOrientationUpdater(mCarState);
+    else
+        mIMUOrientationUpdater.reset(new BNO055OrientationUpdater(mCarState, "/dev/i2c-3"));
+    QObject::connect(mIMUOrientationUpdater.get(), &IMUOrientationUpdater::updatedIMUOrientation, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawIMU);
 
-       previousTachometer = tachometer;
-    });
+    // Odometry
+    QObject::connect(mCarMovementController.get(), &CarMovementController::updatedOdomPositionAndYaw, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawOdom);
 
-    // Take roll & pitch, yaw from VESC's IMU
-    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotIMUOrientation, [&](double roll, double pitch, double yaw){
-        PosPoint tmpIMUPos = mCarState->getPosition(PosType::IMU);
+    // TODO: input to u-blox disabled for now, seems to cause problems (lost fusion mode on F9R) and needs testing/debugging
+//    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, [&](double rpm, int tachometer, int tachometer_abs){
+//       Q_UNUSED(rpm)
+//       uint32_t ticks = tachometer_abs;
+//       uint32_t wheelTickMax = 8388607;
+//       ticks &=  wheelTickMax; // Bits 31..23 are set to zero
 
-        tmpIMUPos.setRoll(roll);
-        tmpIMUPos.setPitch(pitch);
-        tmpIMUPos.setYaw(yaw);
+//       static int previousTachometer = 0;
+//       bool direction = ((tachometer - previousTachometer) > previousTachometer);
+//       ticks |= direction << 23;
 
-        // VESC does not provide timestamp
-        tmpIMUPos.setTime(QTime::currentTime().addSecs(-QDateTime::currentDateTime().offsetFromUtc()));
+//       mUbloxRover->writeOdoToUblox(SINGLE_TICK,ticks);
 
-        mCarState->setPosition(tmpIMUPos);
-        positionFuser.correctPositionAndYawIMU(mCarState); // TODO: this should be signal/slot from (not yet implemented) IMUDataSource to CarPositionFuser
-                                                           //       (make sure uncorrected yaw does not become visible when moving to signal/slot)
-    });
-    mVESCMotorController->setEnableIMUOrientationUpdate(true);
+//       previousTachometer = tachometer;
+//    });
+
 
     // --- Autopilot ---
     QSharedPointer<WaypointFollower> mWaypointFollower(new WaypointFollower(mCarMovementController));
