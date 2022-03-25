@@ -39,6 +39,7 @@ SOURCES += \
         sdvp_qtcommon/gnss/ublox.cpp \
         sdvp_qtcommon/gnss/rtcm3_simple.cpp \
         sdvp_qtcommon/gnss/ubloxrover.cpp \
+        sdvp_qtcommon/gnss/rtcmclient.cpp \
         sdvp_qtcommon/ext/Fusion/FusionBias.c \
         sdvp_qtcommon/ext/Fusion/FusionAhrs.c \
         sdvp_qtcommon/waypointfollower.cpp \
@@ -71,6 +72,7 @@ HEADERS += \
         sdvp_qtcommon/gnss/ublox.h \
         sdvp_qtcommon/gnss/rtcm3_simple.h \
         sdvp_qtcommon/gnss/ubloxrover.h \
+        sdvp_qtcommon/gnss/rtcmclient.h \
         sdvp_qtcommon/ext/Fusion/FusionBias.h \
         sdvp_qtcommon/ext/Fusion/FusionAhrs.h \
         sdvp_qtcommon/ext/Fusion/FusionCalibration.h \
