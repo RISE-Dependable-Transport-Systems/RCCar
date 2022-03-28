@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
     const int mUpdateVehicleStatePeriod_ms = 25;
     QTimer mUpdateVehicleStateTimer;
+    PacketInterfaceTCPServer mPacketIFServer;
 
     // --- VehicleState and lower-level control setup ---
     QSharedPointer<CarState> mCarState(new CarState);
@@ -73,18 +74,18 @@ int main(int argc, char *argv[])
     // -- NTRIP/TCP client setup for feeding RTCM data into GNSS receiver
     RtcmClient rtcmClient;
     QObject::connect(&rtcmClient, &RtcmClient::rtcmData, mUbloxRover.get(), &UbloxRover::writeRtcmToUblox);
-    QFile rtcmServerInfoFile("./rtcmServerInfo.txt");
-    if (!rtcmServerInfoFile.open(QIODevice::ReadOnly))
-        qDebug() << "Note: no credentials found for connecting to NTRIP/TCP server providing RTCM data, skipping.";
-    else {
-        QString serverName = QString(rtcmServerInfoFile.readLine()).trimmed();
-        qint16 port = rtcmServerInfoFile.readLine().toShort();
-        NtripConnectionInfo ntripConnectionInfo = {QString(rtcmServerInfoFile.readLine()).trimmed(),  // username
-                                                   QString(rtcmServerInfoFile.readLine()).trimmed(),  // password
-                                                   QString(rtcmServerInfoFile.readLine()).trimmed()}; // stream
-//        qDebug() << serverName << port << ntripConnectionInfo.user << ntripConnectionInfo.password << ntripConnectionInfo.stream;
-        rtcmClient.connectNtrip(serverName, port, ntripConnectionInfo);
-    }
+    if (rtcmClient.connectWithInfoFromFile("./rtcmServerInfo.txt"))
+        qDebug() << "RtcmClient: connected to" << QString(rtcmClient.getCurrentHost()+ ":" + QString::number(rtcmClient.getCurrentPort()));
+    else
+        qDebug() << "RtcmClient: not connected";
+
+    // -- In case RControlStation sends RTCM data, RtcmClient is disabled (RTCM from RControlStation has priority)
+    QObject::connect(&mPacketIFServer, &PacketInterfaceTCPServer::rtcmData, [&](){
+        qDebug() << "PacketInterfaceTCPServer: got RTCM data, disabling on-vehicle RTCM client.";
+        rtcmClient.disconnect();
+        QObject::disconnect(&rtcmClient, &RtcmClient::rtcmData, mUbloxRover.get(), &UbloxRover::writeRtcmToUblox);
+        QObject::disconnect(&mPacketIFServer, &PacketInterfaceTCPServer::rtcmData, nullptr, nullptr); // run this slot only once
+    });
 
     // IMU
     bool useVESCIMU = true;
@@ -92,7 +93,7 @@ int main(int argc, char *argv[])
     if (useVESCIMU)
         mIMUOrientationUpdater = mVESCMotorController->getIMUOrientationUpdater(mCarState);
     else
-        mIMUOrientationUpdater.reset(new BNO055OrientationUpdater(mCarState, "/dev/i2c-3"));
+        mIMUOrientationUpdater.reset(new BNO055OrientationUpdater(mCarState, "/dev/i2c-1"));
     QObject::connect(mIMUOrientationUpdater.get(), &IMUOrientationUpdater::updatedIMUOrientation, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawIMU);
 
     // Odometry
@@ -124,13 +125,11 @@ int main(int argc, char *argv[])
     DepthAiCamera mDepthAiCamera;
     QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mWaypointFollower.get(), &WaypointFollower::updateFollowPointInVehicleFrame);
 
-    // TCP/IP communication towards RControlStation
-    PacketInterfaceTCPServer mPacketIFServer;
+    // Setup TCP/IP communication towards RControlStation
     mPacketIFServer.setVehicleState(mCarState);
     mPacketIFServer.setMovementController(mCarMovementController);
     mPacketIFServer.setUbloxRover(mUbloxRover);
     mPacketIFServer.setWaypointFollower(mWaypointFollower);
-    mPacketIFServer.setDisableRtcmMessage(rtcmClient.isConnected());
     QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, &mPacketIFServer, &PacketInterfaceTCPServer::updateMotorControllerStatus);
     mPacketIFServer.listen();
 
