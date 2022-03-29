@@ -74,6 +74,7 @@ int main(int argc, char *argv[])
     // -- NTRIP/TCP client setup for feeding RTCM data into GNSS receiver
     RtcmClient rtcmClient;
     QObject::connect(&rtcmClient, &RtcmClient::rtcmData, mUbloxRover.get(), &UbloxRover::writeRtcmToUblox);
+    QObject::connect(&rtcmClient, &RtcmClient::baseStationPosition, mUbloxRover.get(), &UbloxRover::setEnuRef);
     if (rtcmClient.connectWithInfoFromFile("./rtcmServerInfo.txt"))
         qDebug() << "RtcmClient: connected to" << QString(rtcmClient.getCurrentHost()+ ":" + QString::number(rtcmClient.getCurrentPort()));
     else
@@ -84,6 +85,7 @@ int main(int argc, char *argv[])
         qDebug() << "PacketInterfaceTCPServer: got RTCM data, disabling on-vehicle RTCM client.";
         rtcmClient.disconnect();
         QObject::disconnect(&rtcmClient, &RtcmClient::rtcmData, mUbloxRover.get(), &UbloxRover::writeRtcmToUblox);
+        QObject::disconnect(&rtcmClient, &RtcmClient::baseStationPosition, mUbloxRover.get(), &UbloxRover::setEnuRef);
         QObject::disconnect(&mPacketIFServer, &PacketInterfaceTCPServer::rtcmData, nullptr, nullptr); // run this slot only once
     });
 
