@@ -2,17 +2,17 @@
 #include <QSerialPortInfo>
 #include <QDateTime>
 #include <QFile>
-#include "sdvp_qtcommon/simplewatchdog.h"
+#include "sdvp_qtcommon/core/simplewatchdog.h"
 #include "sdvp_qtcommon/legacy/packetinterfacetcpserver.h"
-#include "sdvp_qtcommon/carstate.h"
-#include "sdvp_qtcommon/carmovementcontroller.h"
-#include "sdvp_qtcommon/bno055orientationupdater.h"
-#include "sdvp_qtcommon/gnss/ubloxrover.h"
-#include "sdvp_qtcommon/waypointfollower.h"
-#include "sdvp_qtcommon/vescmotorcontroller.h"
-#include "sdvp_qtcommon/depthaicamera.h"
-#include "sdvp_qtcommon/sdvpvehiclepositionfuser.h"
-#include "sdvp_qtcommon/gnss/rtcmclient.h"
+#include "sdvp_qtcommon/vehicles/carstate.h"
+#include "sdvp_qtcommon/vehicles/controller/carmovementcontroller.h"
+#include "sdvp_qtcommon/sensors/imu/bno055orientationupdater.h"
+#include "sdvp_qtcommon/sensors/gnss/ubloxrover.h"
+#include "sdvp_qtcommon/autopilot/waypointfollower.h"
+#include "sdvp_qtcommon/vehicles/controller/vescmotorcontroller.h"
+#include "sdvp_qtcommon/sensors/camera/depthaicamera.h"
+#include "sdvp_qtcommon/sensors/fusion/sdvpvehiclepositionfuser.h"
+#include "sdvp_qtcommon/sensors/gnss/rtcmclient.h"
 
 int main(int argc, char *argv[])
 {
