@@ -32,7 +32,6 @@ SOURCES += \
         sdvp_qtcommon/core/vbytearray.cpp \
         sdvp_qtcommon/legacy/packetinterfacetcpserver.cpp \
         sdvp_qtcommon/vehicles/controller/movementcontroller.cpp \
-        sdvp_qtcommon/vehicles/controller/motorcontroller.cpp \
         sdvp_qtcommon/vehicles/controller/servocontroller.cpp \
         sdvp_qtcommon/vehicles/controller/vescmotorcontroller.cpp \
         sdvp_qtcommon/vehicles/vehiclestate.cpp \
