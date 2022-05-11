@@ -2,17 +2,17 @@
 #include <QSerialPortInfo>
 #include <QDateTime>
 #include <QFile>
-#include "sdvp_qtcommon/core/simplewatchdog.h"
-#include "sdvp_qtcommon/legacy/packetinterfacetcpserver.h"
-#include "sdvp_qtcommon/vehicles/carstate.h"
-#include "sdvp_qtcommon/vehicles/controller/carmovementcontroller.h"
-#include "sdvp_qtcommon/sensors/imu/bno055orientationupdater.h"
-#include "sdvp_qtcommon/sensors/gnss/ubloxrover.h"
-#include "sdvp_qtcommon/autopilot/waypointfollower.h"
-#include "sdvp_qtcommon/vehicles/controller/vescmotorcontroller.h"
-#include "sdvp_qtcommon/sensors/camera/depthaicamera.h"
-#include "sdvp_qtcommon/sensors/fusion/sdvpvehiclepositionfuser.h"
-#include "sdvp_qtcommon/sensors/gnss/rtcmclient.h"
+#include "WayWise/core/simplewatchdog.h"
+#include "WayWise/legacy/packetinterfacetcpserver.h"
+#include "WayWise/vehicles/carstate.h"
+#include "WayWise/vehicles/controller/carmovementcontroller.h"
+#include "WayWise/sensors/imu/bno055orientationupdater.h"
+#include "WayWise/sensors/gnss/ubloxrover.h"
+#include "WayWise/autopilot/waypointfollower.h"
+#include "WayWise/vehicles/controller/vescmotorcontroller.h"
+#include "WayWise/sensors/camera/depthaicamera.h"
+#include "WayWise/sensors/fusion/sdvpvehiclepositionfuser.h"
+#include "WayWise/sensors/gnss/rtcmclient.h"
 
 int main(int argc, char *argv[])
 {
