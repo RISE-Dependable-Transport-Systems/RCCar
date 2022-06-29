@@ -35,12 +35,8 @@ add_executable(RCCar
     WayWise/vehicles/objectstate.cpp
     WayWise/vehicles/carstate.cpp
     WayWise/external/vesc/vescpacket.cpp
-    WayWise/legacy/locpoint.cpp
-    WayWise/legacy/packet.cpp
-    WayWise/legacy/tcpserversimple.cpp
     WayWise/core/simplewatchdog.cpp
     WayWise/core/vbytearray.cpp
-    WayWise/legacy/packetinterfacetcpserver.cpp
     WayWise/vehicles/controller/motorcontroller.h
     WayWise/vehicles/controller/movementcontroller.cpp
     WayWise/vehicles/controller/servocontroller.cpp
@@ -56,6 +52,7 @@ add_executable(RCCar
     WayWise/sensors/camera/depthaicamera.cpp
     WayWise/communication/jsonstreamparsertcp.cpp
     WayWise/sensors/fusion/sdvpvehiclepositionfuser.cpp
+    WayWise/communication/mavsdkvehicleserver.cpp
 )
 
 target_include_directories(RCCar PRIVATE WayWise/)
