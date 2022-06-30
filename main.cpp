@@ -129,11 +129,10 @@ int main(int argc, char *argv[])
     DepthAiCamera mDepthAiCamera;
     QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mWaypointFollower.get(), &PurepursuitWaypointFollower::updateFollowPointInVehicleFrame);
 
-    // Setup TCP/IP communication towards RControlStation
-//    mPacketIFServer.setVehicleState(mCarState);
-//    mPacketIFServer.setMovementController(mCarMovementController);
+    // Setup MAVLINK communication towards ControlTower
+    mavsdkVehicleServer.setMovementController(mCarMovementController);
     mavsdkVehicleServer.setUbloxRover(mUbloxRover);
-//    mPacketIFServer.setWaypointFollower(mWaypointFollower);
+    mavsdkVehicleServer.setWaypointFollower(mWaypointFollower);
 //    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, &mPacketIFServer, &PacketInterfaceTCPServer::updateMotorControllerStatus);
 //    mPacketIFServer.listen();
 
