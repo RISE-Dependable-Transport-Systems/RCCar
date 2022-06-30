@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 //    mPacketIFServer.setVehicleState(mCarState);
 //    mPacketIFServer.setMovementController(mCarMovementController);
     mavsdkVehicleServer.setUbloxRover(mUbloxRover);
-//    mPacketIFServer.setWaypointFollower(mWaypointFollower);
+    mavsdkVehicleServer.setWaypointFollower(mWaypointFollower);
 //    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, &mPacketIFServer, &PacketInterfaceTCPServer::updateMotorControllerStatus);
 //    mPacketIFServer.listen();
 
