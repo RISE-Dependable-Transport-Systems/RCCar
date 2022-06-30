@@ -48,7 +48,8 @@ add_executable(RCCar
     WayWise/sensors/gnss/rtcm3_simple.cpp
     WayWise/sensors/gnss/ubloxrover.cpp
     WayWise/sensors/gnss/rtcmclient.cpp
-    WayWise/autopilot/waypointfollower.cpp
+    WayWise/autopilot/waypointfollower.h
+    WayWise/autopilot/purepursuitwaypointfollower.cpp
     WayWise/sensors/camera/depthaicamera.cpp
     WayWise/communication/jsonstreamparsertcp.cpp
     WayWise/sensors/fusion/sdvpvehiclepositionfuser.cpp

@@ -7,6 +7,7 @@
 #include "WayWise/vehicles/controller/carmovementcontroller.h"
 #include "WayWise/sensors/imu/bno055orientationupdater.h"
 #include "WayWise/sensors/gnss/ubloxrover.h"
+#include "WayWise/autopilot/waypointfollower.h"
 #include "WayWise/autopilot/purepursuitwaypointfollower.h"
 #include "WayWise/vehicles/controller/vescmotorcontroller.h"
 #include "WayWise/sensors/camera/depthaicamera.h"
