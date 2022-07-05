@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
             if (mUbloxRover->connectSerial(portInfo)) {
                 qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
 
-                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 270.0);
+                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 180.0);
             }
         }
     }
@@ -129,9 +129,8 @@ int main(int argc, char *argv[])
     DepthAiCamera mDepthAiCamera;
     QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mWaypointFollower.get(), &PurepursuitWaypointFollower::updateFollowPointInVehicleFrame);
 
-    // Setup TCP/IP communication towards RControlStation
-//    mPacketIFServer.setVehicleState(mCarState);
-//    mPacketIFServer.setMovementController(mCarMovementController);
+    // Setup MAVLINK communication towards ControlTower
+    mavsdkVehicleServer.setMovementController(mCarMovementController);
     mavsdkVehicleServer.setUbloxRover(mUbloxRover);
     mavsdkVehicleServer.setWaypointFollower(mWaypointFollower);
 //    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, &mPacketIFServer, &PacketInterfaceTCPServer::updateMotorControllerStatus);
