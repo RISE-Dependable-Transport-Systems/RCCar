@@ -8,7 +8,7 @@
 #include "WayWise/vehicles/controller/carmovementcontroller.h"
 #include "WayWise/sensors/imu/bno055orientationupdater.h"
 #include "WayWise/sensors/gnss/ubloxrover.h"
-#include "WayWise/autopilot/waypointfollower.h"
+#include "WayWise/autopilot/purepursuitwaypointfollower.h"
 #include "WayWise/vehicles/controller/vescmotorcontroller.h"
 #include "WayWise/sensors/camera/depthaicamera.h"
 #include "WayWise/sensors/fusion/sdvpvehiclepositionfuser.h"
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
             if (mUbloxRover->connectSerial(portInfo)) {
                 qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
 
-                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 270.0);
+                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 180.0);
             }
         }
     }
@@ -119,13 +119,13 @@ int main(int argc, char *argv[])
 
 
     // --- Autopilot ---
-    QSharedPointer<WaypointFollower> mWaypointFollower(new WaypointFollower(mCarMovementController));
+    QSharedPointer<PurepursuitWaypointFollower> mWaypointFollower(new PurepursuitWaypointFollower(mCarMovementController));
     mWaypointFollower->setPurePursuitRadius(1.0);
     mWaypointFollower->setRepeatRoute(false);
 
     // DepthAI Camera & Follow Point
     DepthAiCamera mDepthAiCamera;
-    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mWaypointFollower.get(), &WaypointFollower::updateFollowPointInVehicleFrame);
+    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mWaypointFollower.get(), &PurepursuitWaypointFollower::updateFollowPointInVehicleFrame);
 
     // Setup TCP/IP communication towards RControlStation
     mPacketIFServer.setVehicleState(mCarState);

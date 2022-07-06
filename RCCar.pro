@@ -41,7 +41,8 @@ SOURCES += \
         WayWise/sensors/gnss/rtcm3_simple.cpp \
         WayWise/sensors/gnss/ubloxrover.cpp \
         WayWise/sensors/gnss/rtcmclient.cpp \
-        WayWise/autopilot/waypointfollower.cpp \
+#        WayWise/communication/vehicleconnections/vehicleconnection.cpp \
+        WayWise/autopilot/purepursuitwaypointfollower.cpp \
         WayWise/sensors/camera/depthaicamera.cpp \
         WayWise/communication/jsonstreamparsertcp.cpp \
         WayWise/sensors/fusion/sdvpvehiclepositionfuser.cpp
@@ -73,6 +74,9 @@ HEADERS += \
         WayWise/sensors/gnss/ubloxrover.h \
         WayWise/sensors/gnss/rtcmclient.h \
         WayWise/autopilot/waypointfollower.h \
+        WayWise/sensors/camera/gimbal.h \
+        WayWise/communication/vehicleconnections/vehicleconnection.h \
+        WayWise/autopilot/purepursuitwaypointfollower.h \
         WayWise/sensors/camera/depthaicamera.h \
         WayWise/communication/jsonstreamparsertcp.h \
         WayWise/sensors/fusion/sdvpvehiclepositionfuser.h
