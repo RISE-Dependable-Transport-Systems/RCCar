@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
             if (mUbloxRover->connectSerial(portInfo)) {
                 qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
 
-                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 180.0);
+                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 0.0);
             }
         }
     }
