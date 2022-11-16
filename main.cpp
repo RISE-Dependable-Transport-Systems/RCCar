@@ -82,6 +82,7 @@ int main(int argc, char *argv[])
     else
         qDebug() << "RtcmClient: not connected";
 
+    // TODO: re-add feature for MAVLink-based communication
     // -- In case RControlStation sends RTCM data, RtcmClient is disabled (RTCM from RControlStation has priority)
 //    QObject::connect(&mPacketIFServer, &PacketInterfaceTCPServer::rtcmData, [&](){
 //        qDebug() << "PacketInterfaceTCPServer: got RTCM data, disabling on-vehicle RTCM client.";
@@ -133,8 +134,8 @@ int main(int argc, char *argv[])
     mavsdkVehicleServer.setMovementController(mCarMovementController);
     mavsdkVehicleServer.setUbloxRover(mUbloxRover);
     mavsdkVehicleServer.setWaypointFollower(mWaypointFollower);
+    // TODO: motor controller status not supported in ControlTower
 //    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, &mPacketIFServer, &PacketInterfaceTCPServer::updateMotorControllerStatus);
-//    mPacketIFServer.listen();
 
     // Watchdog that warns when EventLoop is slowed down
     SimpleWatchdog watchdog;
