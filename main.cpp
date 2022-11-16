@@ -3,26 +3,28 @@
 #include <QDateTime>
 #include <QFile>
 #include "WayWise/core/simplewatchdog.h"
-#include "WayWise/legacy/packetinterfacetcpserver.h"
 #include "WayWise/vehicles/carstate.h"
 #include "WayWise/vehicles/controller/carmovementcontroller.h"
 #include "WayWise/sensors/imu/bno055orientationupdater.h"
 #include "WayWise/sensors/gnss/ubloxrover.h"
+#include "WayWise/autopilot/waypointfollower.h"
 #include "WayWise/autopilot/purepursuitwaypointfollower.h"
 #include "WayWise/vehicles/controller/vescmotorcontroller.h"
 #include "WayWise/sensors/camera/depthaicamera.h"
 #include "WayWise/sensors/fusion/sdvpvehiclepositionfuser.h"
 #include "WayWise/sensors/gnss/rtcmclient.h"
+#include "WayWise/communication/mavsdkvehicleserver.h"
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
     const int mUpdateVehicleStatePeriod_ms = 25;
     QTimer mUpdateVehicleStateTimer;
-    PacketInterfaceTCPServer mPacketIFServer;
 
-    // --- VehicleState and lower-level control setup ---
     QSharedPointer<CarState> mCarState(new CarState);
+    MavsdkVehicleServer mavsdkVehicleServer(mCarState);
+
+    // --- Lower-level control setup ---
     QSharedPointer<CarMovementController> mCarMovementController(new CarMovementController(mCarState));
     // NOTE: HEADSTART rc car (values read from sdvp pcb)
     mCarMovementController->setSpeedToRPMFactor(2997.3);
@@ -65,7 +67,7 @@ int main(int argc, char *argv[])
             if (mUbloxRover->connectSerial(portInfo)) {
                 qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
 
-                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 180.0);
+                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 0.0);
             }
         }
     }
@@ -80,14 +82,15 @@ int main(int argc, char *argv[])
     else
         qDebug() << "RtcmClient: not connected";
 
+    // TODO: re-add feature for MAVLink-based communication
     // -- In case RControlStation sends RTCM data, RtcmClient is disabled (RTCM from RControlStation has priority)
-    QObject::connect(&mPacketIFServer, &PacketInterfaceTCPServer::rtcmData, [&](){
-        qDebug() << "PacketInterfaceTCPServer: got RTCM data, disabling on-vehicle RTCM client.";
-        rtcmClient.disconnect();
-        QObject::disconnect(&rtcmClient, &RtcmClient::rtcmData, mUbloxRover.get(), &UbloxRover::writeRtcmToUblox);
-        QObject::disconnect(&rtcmClient, &RtcmClient::baseStationPosition, mUbloxRover.get(), &UbloxRover::setEnuRef);
-        QObject::disconnect(&mPacketIFServer, &PacketInterfaceTCPServer::rtcmData, nullptr, nullptr); // run this slot only once
-    });
+//    QObject::connect(&mPacketIFServer, &PacketInterfaceTCPServer::rtcmData, [&](){
+//        qDebug() << "PacketInterfaceTCPServer: got RTCM data, disabling on-vehicle RTCM client.";
+//        rtcmClient.disconnect();
+//        QObject::disconnect(&rtcmClient, &RtcmClient::rtcmData, mUbloxRover.get(), &UbloxRover::writeRtcmToUblox);
+//        QObject::disconnect(&rtcmClient, &RtcmClient::baseStationPosition, mUbloxRover.get(), &UbloxRover::setEnuRef);
+//        QObject::disconnect(&mPacketIFServer, &PacketInterfaceTCPServer::rtcmData, nullptr, nullptr); // run this slot only once
+//    });
 
     // IMU
     bool useVESCIMU = true;
@@ -127,13 +130,12 @@ int main(int argc, char *argv[])
     DepthAiCamera mDepthAiCamera;
     QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mWaypointFollower.get(), &PurepursuitWaypointFollower::updateFollowPointInVehicleFrame);
 
-    // Setup TCP/IP communication towards RControlStation
-    mPacketIFServer.setVehicleState(mCarState);
-    mPacketIFServer.setMovementController(mCarMovementController);
-    mPacketIFServer.setUbloxRover(mUbloxRover);
-    mPacketIFServer.setWaypointFollower(mWaypointFollower);
-    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, &mPacketIFServer, &PacketInterfaceTCPServer::updateMotorControllerStatus);
-    mPacketIFServer.listen();
+    // Setup MAVLINK communication towards ControlTower
+    mavsdkVehicleServer.setMovementController(mCarMovementController);
+    mavsdkVehicleServer.setUbloxRover(mUbloxRover);
+    mavsdkVehicleServer.setWaypointFollower(mWaypointFollower);
+    // TODO: motor controller status not supported in ControlTower
+//    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, &mPacketIFServer, &PacketInterfaceTCPServer::updateMotorControllerStatus);
 
     // Watchdog that warns when EventLoop is slowed down
     SimpleWatchdog watchdog;
