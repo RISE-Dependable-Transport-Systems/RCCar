@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
 
     // -- NTRIP/TCP client setup for feeding RTCM data into GNSS receiver
     RtcmClient rtcmClient;
+    QObject::connect(mUbloxRover.get(), &UbloxRover::gotNmeaGga, &rtcmClient, &RtcmClient::forwardNmeaGgaToServer);
     QObject::connect(&rtcmClient, &RtcmClient::rtcmData, mUbloxRover.get(), &UbloxRover::writeRtcmToUblox);
     QObject::connect(&rtcmClient, &RtcmClient::baseStationPosition, mUbloxRover.get(), &UbloxRover::setEnuRef);
     if (rtcmClient.connectWithInfoFromFile("./rtcmServerInfo.txt"))

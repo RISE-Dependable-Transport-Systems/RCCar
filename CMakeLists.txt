@@ -28,34 +28,35 @@ find_package(Qt5 COMPONENTS Core Network SerialPort REQUIRED)
 find_package(MAVSDK REQUIRED)
 
 add_executable(RCCar
-    main.cpp
-    WayWise/external/pi-bno055/i2c_bno055.c
-    WayWise/sensors/imu/bno055orientationupdater.cpp
-    WayWise/sensors/imu/imuorientationupdater.cpp
-    WayWise/vehicles/objectstate.cpp
-    WayWise/vehicles/carstate.cpp
-    WayWise/external/vesc/vescpacket.cpp
+    WayWise/autopilot/purepursuitwaypointfollower.cpp
+    WayWise/autopilot/purepursuitwaypointfollower.h
+    WayWise/autopilot/waypointfollower.h
+    WayWise/communication/jsonstreamparsertcp.cpp
+    WayWise/communication/mavsdkvehicleserver.cpp
+    WayWise/communication/vehicleconnections/vehicleconnection.cpp
+    WayWise/core/pospoint.cpp
     WayWise/core/simplewatchdog.cpp
     WayWise/core/vbytearray.cpp
+    WayWise/external/pi-bno055/i2c_bno055.c
+    WayWise/external/vesc/vescpacket.cpp
+    WayWise/sensors/camera/depthaicamera.cpp
+    WayWise/sensors/camera/gimbal.h
+    WayWise/sensors/fusion/sdvpvehiclepositionfuser.cpp
+    WayWise/sensors/gnss/rtcm3_simple.cpp
+    WayWise/sensors/gnss/rtcmclient.cpp
+    WayWise/sensors/gnss/ublox.cpp
+    WayWise/sensors/gnss/ubloxrover.cpp
+    WayWise/sensors/imu/bno055orientationupdater.cpp
+    WayWise/sensors/imu/imuorientationupdater.cpp
+    WayWise/vehicles/carstate.cpp
+    WayWise/vehicles/controller/carmovementcontroller.cpp
     WayWise/vehicles/controller/motorcontroller.h
     WayWise/vehicles/controller/movementcontroller.cpp
     WayWise/vehicles/controller/servocontroller.cpp
     WayWise/vehicles/controller/vescmotorcontroller.cpp
+    WayWise/vehicles/objectstate.cpp
     WayWise/vehicles/vehiclestate.cpp
-    WayWise/core/pospoint.cpp
-    WayWise/vehicles/controller/carmovementcontroller.cpp
-    WayWise/sensors/gnss/ublox.cpp
-    WayWise/sensors/gnss/rtcm3_simple.cpp
-    WayWise/sensors/gnss/ubloxrover.cpp
-    WayWise/sensors/gnss/rtcmclient.cpp
-    WayWise/sensors/camera/gimbal.h
-    WayWise/communication/vehicleconnections/vehicleconnection.cpp
-    WayWise/autopilot/waypointfollower.h
-    WayWise/autopilot/purepursuitwaypointfollower.cpp
-    WayWise/sensors/camera/depthaicamera.cpp
-    WayWise/communication/jsonstreamparsertcp.cpp
-    WayWise/sensors/fusion/sdvpvehiclepositionfuser.cpp
-    WayWise/communication/mavsdkvehicleserver.cpp
+    main.cpp
 )
 
 target_include_directories(RCCar PRIVATE WayWise/)
