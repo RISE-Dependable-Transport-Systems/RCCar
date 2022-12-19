@@ -9,6 +9,7 @@
 #include "WayWise/sensors/gnss/ubloxrover.h"
 #include "WayWise/autopilot/waypointfollower.h"
 #include "WayWise/autopilot/purepursuitwaypointfollower.h"
+#include "WayWise/autopilot/emergencybrake.h"
 #include "WayWise/vehicles/controller/vescmotorcontroller.h"
 #include "WayWise/sensors/camera/depthaicamera.h"
 #include "WayWise/sensors/fusion/sdvpvehiclepositionfuser.h"
@@ -130,6 +131,12 @@ int main(int argc, char *argv[])
     // DepthAI Camera & Follow Point
     DepthAiCamera mDepthAiCamera;
     QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mWaypointFollower.get(), &PurepursuitWaypointFollower::updateFollowPointInVehicleFrame);
+
+    // Emergency brake
+    EmergencyBrake mEmergencyBrake;
+    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, &mEmergencyBrake, &EmergencyBrake::camera);
+    QObject::connect(mWaypointFollower.get(), &WaypointFollower::deactivateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::deactivateEmergencyBrake);
+    QObject::connect(mWaypointFollower.get(), &WaypointFollower::activateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::activateEmergencyBrake);
 
     // Setup MAVLINK communication towards ControlTower
     mavsdkVehicleServer.setMovementController(mCarMovementController);

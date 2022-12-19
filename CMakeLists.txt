@@ -31,6 +31,7 @@ add_executable(RCCar
     WayWise/autopilot/purepursuitwaypointfollower.cpp
     WayWise/autopilot/purepursuitwaypointfollower.h
     WayWise/autopilot/waypointfollower.h
+    WayWise/autopilot/emergencybrake.cpp
     WayWise/communication/jsonstreamparsertcp.cpp
     WayWise/communication/mavsdkvehicleserver.cpp
     WayWise/communication/vehicleconnections/vehicleconnection.cpp
