@@ -134,9 +134,10 @@ int main(int argc, char *argv[])
 
     // Emergency brake
     EmergencyBrake mEmergencyBrake;
-    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, &mEmergencyBrake, &EmergencyBrake::camera);
+    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, &mEmergencyBrake, &EmergencyBrake::brakeForDetectedCameraObject);
     QObject::connect(mWaypointFollower.get(), &WaypointFollower::deactivateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::deactivateEmergencyBrake);
     QObject::connect(mWaypointFollower.get(), &WaypointFollower::activateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::activateEmergencyBrake);
+    QObject::connect(&mEmergencyBrake, &EmergencyBrake::emergencyBrake, mWaypointFollower.get(), &WaypointFollower::stop);
 
     // Setup MAVLINK communication towards ControlTower
     mavsdkVehicleServer.setMovementController(mCarMovementController);
