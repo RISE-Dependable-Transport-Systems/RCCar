@@ -2,6 +2,7 @@
 #include <QSerialPortInfo>
 #include <QDateTime>
 #include <QFile>
+#include <signal.h>
 #include "WayWise/core/simplewatchdog.h"
 #include "WayWise/vehicles/carstate.h"
 #include "WayWise/vehicles/controller/carmovementcontroller.h"
@@ -15,6 +16,12 @@
 #include "WayWise/sensors/fusion/sdvpvehiclepositionfuser.h"
 #include "WayWise/sensors/gnss/rtcmclient.h"
 #include "WayWise/communication/mavsdkvehicleserver.h"
+
+static void terminationSignalHandler(int signal) {
+    qDebug() << "Shutting down";
+    if (signal==SIGINT || signal==SIGTERM || signal==SIGQUIT || signal==SIGHUP)
+        qApp->quit();
+}
 
 int main(int argc, char *argv[])
 {
@@ -148,6 +155,10 @@ int main(int argc, char *argv[])
 
     // Watchdog that warns when EventLoop is slowed down
     SimpleWatchdog watchdog;
+
+    // Perform safe shutdown
+    signal(SIGINT, terminationSignalHandler);
+    QObject::connect(&a, &QCoreApplication::aboutToQuit, &mavsdkVehicleServer, &MavsdkVehicleServer::saveParametersToXmlFile);
 
     qDebug() << "\n" // by hjw
              << "                    .------.\n"
