@@ -3,6 +3,7 @@
 #include <QDateTime>
 #include <QFile>
 #include <signal.h>
+#include <QProcess>
 #include "WayWise/core/simplewatchdog.h"
 #include "WayWise/vehicles/carstate.h"
 #include "WayWise/vehicles/controller/carmovementcontroller.h"
@@ -158,7 +159,20 @@ int main(int argc, char *argv[])
 
     // Perform safe shutdown
     signal(SIGINT, terminationSignalHandler);
-    QObject::connect(&a, &QCoreApplication::aboutToQuit, &mavsdkVehicleServer, &MavsdkVehicleServer::saveParametersToXmlFile);
+    QObject::connect(&a, &QCoreApplication::aboutToQuit, [&](){
+        mUbloxRover->saveOnShutdown();
+        mavsdkVehicleServer.saveParametersToXmlFile();
+    });
+    QObject::connect(&mavsdkVehicleServer, &MavsdkVehicleServer::shutdownOrRebootOnboardComputer, [&](bool isShutdown){
+        qApp->quit();
+        if (isShutdown) {
+           qDebug() << "\nSystem shutdown...";
+           QProcess::startDetached("sudo", QStringList() << "shutdown" << "-P" << "now");
+        }else {
+           qDebug() << "\nSystem reboot...";
+           QProcess::startDetached("sudo", QStringList() << "shutdown" << "-r" << "now");
+        }
+    });
 
     qDebug() << "\n" // by hjw
              << "                    .------.\n"
