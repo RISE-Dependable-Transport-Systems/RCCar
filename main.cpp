@@ -17,6 +17,7 @@
 #include "WayWise/sensors/fusion/sdvpvehiclepositionfuser.h"
 #include "WayWise/sensors/gnss/rtcmclient.h"
 #include "WayWise/communication/mavsdkvehicleserver.h"
+#include "WayWise/logger/vehiclelogger.h"
 
 static void terminationSignalHandler(int signal) {
     qDebug() << "Shutting down";
@@ -26,6 +27,8 @@ static void terminationSignalHandler(int signal) {
 
 int main(int argc, char *argv[])
 {
+    VehicleLogger::init();
+
     QCoreApplication a(argc, argv);
     const int mUpdateVehicleStatePeriod_ms = 25;
     QTimer mUpdateVehicleStateTimer;
@@ -186,5 +189,8 @@ int main(int argc, char *argv[])
              << "     /\\ `-' /                    /\\ `-' /\n"
              << "       `---'                       `---'\n";
 
-    return a.exec();
+    bool state = a.exec();
+
+    VehicleLogger::shutDown();
+    return state;
 }
