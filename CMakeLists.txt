@@ -35,6 +35,8 @@ add_executable(RCCar
     WayWise/communication/jsonstreamparsertcp.cpp
     WayWise/communication/mavsdkvehicleserver.cpp
     WayWise/communication/vehicleconnections/vehicleconnection.cpp
+    WayWise/communication/mavlinkparameterserver.cpp
+    WayWise/communication/parameterserver.cpp
     WayWise/core/pospoint.cpp
     WayWise/core/simplewatchdog.cpp
     WayWise/core/vbytearray.cpp

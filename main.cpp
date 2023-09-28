@@ -17,6 +17,7 @@
 #include "WayWise/sensors/fusion/sdvpvehiclepositionfuser.h"
 #include "WayWise/sensors/gnss/rtcmclient.h"
 #include "WayWise/communication/mavsdkvehicleserver.h"
+#include "WayWise/communication/parameterserver.h"
 
 static void terminationSignalHandler(int signal) {
     qDebug() << "Shutting down";
@@ -135,6 +136,7 @@ int main(int argc, char *argv[])
     QSharedPointer<PurepursuitWaypointFollower> mWaypointFollower(new PurepursuitWaypointFollower(mCarMovementController));
     mWaypointFollower->setPurePursuitRadius(1.0);
     mWaypointFollower->setRepeatRoute(false);
+    mWaypointFollower->setAdaptivePurePursuitRadiusActive(true);
 
     // DepthAI Camera & Follow Point
     DepthAiCamera mDepthAiCamera;
@@ -161,7 +163,7 @@ int main(int argc, char *argv[])
     signal(SIGINT, terminationSignalHandler);
     QObject::connect(&a, &QCoreApplication::aboutToQuit, [&](){
         mUbloxRover->saveOnShutdown();
-        mavsdkVehicleServer.saveParametersToXmlFile();
+        ParameterServer::getInstance()->saveParametersToXmlFile("vehicle_parameters.xml");
     });
     QObject::connect(&mavsdkVehicleServer, &MavsdkVehicleServer::shutdownOrRebootOnboardComputer, [&](bool isShutdown){
         qApp->quit();
