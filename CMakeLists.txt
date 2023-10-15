@@ -59,6 +59,7 @@ add_executable(RCCar
     WayWise/vehicles/controller/vescmotorcontroller.cpp
     WayWise/vehicles/objectstate.cpp
     WayWise/vehicles/vehiclestate.cpp
+    WayWise/logger/logger.cpp
     main.cpp
 )
 
