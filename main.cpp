@@ -18,6 +18,7 @@
 #include "WayWise/sensors/gnss/rtcmclient.h"
 #include "WayWise/communication/mavsdkvehicleserver.h"
 #include "WayWise/communication/parameterserver.h"
+#include "WayWise/logger/logger.h"
 
 static void terminationSignalHandler(int signal) {
     qDebug() << "Shutting down";
@@ -27,6 +28,8 @@ static void terminationSignalHandler(int signal) {
 
 int main(int argc, char *argv[])
 {
+    Logger::initVehicle();
+
     QCoreApplication a(argc, argv);
     const int mUpdateVehicleStatePeriod_ms = 25;
     QTimer mUpdateVehicleStateTimer;
