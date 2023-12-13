@@ -19,6 +19,7 @@
 #include "WayWise/communication/mavsdkvehicleserver.h"
 #include "WayWise/communication/parameterserver.h"
 #include "WayWise/logger/logger.h"
+#include "WayWise/vehicles/vehiclelighting.h"
 
 static void terminationSignalHandler(int signal) {
     qDebug() << "Shutting down";
@@ -152,12 +153,14 @@ int main(int argc, char *argv[])
     QObject::connect(mWaypointFollower.get(), &WaypointFollower::activateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::activateEmergencyBrake);
     QObject::connect(&mEmergencyBrake, &EmergencyBrake::emergencyBrake, mWaypointFollower.get(), &WaypointFollower::stop);
 
+    // Vehicle lighting
+    QSharedPointer<VehicleLighting> mVehicleLighting(new VehicleLighting(mCarState));
+
     // Setup MAVLINK communication towards ControlTower
     mavsdkVehicleServer.setMovementController(mCarMovementController);
     mavsdkVehicleServer.setUbloxRover(mUbloxRover);
     mavsdkVehicleServer.setWaypointFollower(mWaypointFollower);
     // TODO: motor controller status not supported in ControlTower
-//    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, &mPacketIFServer, &PacketInterfaceTCPServer::updateMotorControllerStatus);
 
     // Watchdog that warns when EventLoop is slowed down
     SimpleWatchdog watchdog;
