@@ -60,6 +60,7 @@ add_executable(RCCar
     WayWise/sensors/imu/bno055orientationupdater.cpp
     WayWise/sensors/imu/imuorientationupdater.cpp
     WayWise/vehicles/carstate.cpp
+    WayWise/vehicles/vehiclelighting.cpp
     WayWise/vehicles/controller/carmovementcontroller.cpp
     WayWise/vehicles/controller/motorcontroller.h
     WayWise/vehicles/controller/movementcontroller.cpp
@@ -77,4 +78,5 @@ target_link_libraries(RCCar
     PRIVATE Qt5::Network
     PRIVATE Qt5::SerialPort
     PRIVATE MAVSDK::mavsdk
+    PRIVATE gpiodcxx
 )
