@@ -15,20 +15,15 @@ Optional components:
 
 ![image](https://user-images.githubusercontent.com/2404625/202226896-c18d3567-b714-4700-89af-7c20cadf11c0.png)
 
-MAVSDK commit 926b067 or newer is require for building, which will probably become MAVSDK 2.0. For the time being you need to build MAVSDK yourself. You can find simple [scripts for that in the WayWise repository](https://github.com/RISE-Dependable-Transport-Systems/WayWise/tree/main/tools/build_MAVSDK).
+MAVSDK 2.0 or newer is required and pre-built releases can be found at https://github.com/mavlink/MAVSDK/releases. To instead build MAVSDK from source, simple [scripts can be found in the WayWise repository](https://github.com/RISE-Dependable-Transport-Systems/WayWise/tree/main/tools/build_MAVSDK).
 
 ## Installing Prerequisites (on Ubuntu 20.04/22.04) & Building
-    sudo apt install git build-essential cmake libqt5serialport5-dev 
+    # Installing MAVSDK
+    sudo dpkg -i libmavsdk-dev*.deb
+
+    sudo apt install git build-essential cmake libqt5serialport5-dev libgpiod-dev
     git clone --recurse-submodules git@github.com:RISE-Dependable-Transport-Systems/RCCar.git
     cd RCCar
-
-    # Building MAVSDK (requires [docker](https://docs.docker.com/engine/install/ubuntu/)):
-    cd WayWise/tools/build_MAVSDK
-    git clone --recursive git@github.com:mavlink/MAVSDK.git
-    ./docker_create_amd64-deb.sh
-    sudo dpkg -i libmavsdk*.deb
-    cd -
-
     mkdir build && cd build
     cmake ..
     make -j4
