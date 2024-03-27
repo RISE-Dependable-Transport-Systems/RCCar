@@ -29,6 +29,16 @@ static void terminationSignalHandler(int signal) {
 
 int main(int argc, char *argv[])
 {
+    // Set IP address and port to ControlTower if provided as arguments when starting RCCar from command line
+    QString controlTowerIP = "127.0.0.1";
+    unsigned controlTowerPort = 14540;
+    if(argc > 1) {
+        controlTowerIP = argv[1];
+    }
+    if(argc > 2) {
+        sscanf(argv[2], "%u", &controlTowerPort);
+    }
+
     Logger::initVehicle();
 
     QCoreApplication a(argc, argv);
@@ -36,7 +46,7 @@ int main(int argc, char *argv[])
     QTimer mUpdateVehicleStateTimer;
 
     QSharedPointer<CarState> mCarState(new CarState);
-    MavsdkVehicleServer mavsdkVehicleServer(mCarState);
+    MavsdkVehicleServer mavsdkVehicleServer(mCarState, QHostAddress(controlTowerIP), controlTowerPort);
 
     // --- Lower-level control setup ---
     QSharedPointer<CarMovementController> mCarMovementController(new CarMovementController(mCarState));
