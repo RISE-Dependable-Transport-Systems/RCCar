@@ -23,23 +23,57 @@
 
 static void terminationSignalHandler(int signal) {
     qDebug() << "Shutting down";
-    if (signal==SIGINT || signal==SIGTERM || signal==SIGQUIT || signal==SIGHUP)
+    if (signal==SIGINT || signal==SIGTERM || signal==SIGQUIT || signal==SIGHUP) {
         qApp->quit();
+        exit(EXIT_SUCCESS);
+    } else {
+        exit(EXIT_FAILURE);
+    }
 }
 
 int main(int argc, char *argv[])
 {
+
     // Set IP address and port to ControlTower if provided as arguments when starting RCCar from command line
     QString controlTowerIP = "127.0.0.1";
     unsigned controlTowerPort = 14540;
-    if(argc > 1) {
-        controlTowerIP = argv[1];
-    }
-    if(argc > 2) {
-        sscanf(argv[2], "%u", &controlTowerPort);
-    }
+
+    int opt;
+    bool verbose = false;
+
+    while ((opt = getopt(argc, argv, "c:vh")) != -1) {
+        switch(opt) {
+            case 'c':
+            {
+                QString controlTowerIPport = optarg;
+                if(controlTowerIPport.contains(":")) {
+                    controlTowerIP = controlTowerIPport.split(":").at(0);
+                    QString port = controlTowerIPport.split(":").at(1);
+                    QByteArray portbytes = port.toLocal8Bit();
+                    sscanf(portbytes.data(), "%u", &controlTowerPort);
+                } else {
+                    controlTowerIP = controlTowerIPport;
+                }
+                break;
+            }
+            case 'v':
+                verbose = true;
+                break;
+            case '?':
+            case 'h':
+                printf("Usage: RCCar -c host:port -v");
+                printf("\n -c: optional host and optional port to connect to\n -v: set optional verbose logging\n");
+                exit(EXIT_SUCCESS);
+                break;
+        }
+     }
 
     Logger::initVehicle();
+
+    if(verbose) {
+        Logger::setVerbose(true);
+        qDebug() << "verbose" << "Verbose logging on";
+    }
 
     QCoreApplication a(argc, argv);
     const int mUpdateVehicleStatePeriod_ms = 25;
