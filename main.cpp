@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
             case '?':
             case 'h':
                 printf("Usage: RCCar -c host:port -v");
-                printf("\n -c: optional host and optional port to connect to\n -v: set optional verbose logging on\n");
+                printf("\n -c: optional host and optional port to connect to\n -v: set optional verbose logging\n");
                 exit(EXIT_SUCCESS);
                 break;
         }
