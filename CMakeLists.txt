@@ -39,6 +39,7 @@ add_executable(RCCar
     WayWise/autopilot/purepursuitwaypointfollower.h
     WayWise/autopilot/waypointfollower.h
     WayWise/autopilot/emergencybrake.cpp
+    WayWise/autopilot/followpoint.cpp
     WayWise/communication/jsonstreamparsertcp.cpp
     WayWise/communication/vehicleserver.h
     WayWise/communication/mavsdkvehicleserver.cpp
@@ -48,6 +49,7 @@ add_executable(RCCar
     WayWise/core/pospoint.cpp
     WayWise/core/simplewatchdog.cpp
     WayWise/core/vbytearray.cpp
+    WayWise/core/geometry.h
     WayWise/external/pi-bno055/i2c_bno055.c
     WayWise/external/vesc/vescpacket.cpp
     WayWise/sensors/camera/depthaicamera.cpp

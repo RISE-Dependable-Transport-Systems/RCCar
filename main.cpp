@@ -20,6 +20,7 @@
 #include "WayWise/communication/parameterserver.h"
 #include "WayWise/logger/logger.h"
 #include "WayWise/vehicles/vehiclelighting.h"
+#include "WayWise/autopilot/followpoint.h"
 
 static void terminationSignalHandler(int signal) {
     qDebug() << "Shutting down";
@@ -135,22 +136,27 @@ int main(int argc, char *argv[])
 //       previousTachometer = tachometer;
 //    });
 
-
     // --- Autopilot ---
     QSharedPointer<PurepursuitWaypointFollower> mWaypointFollower(new PurepursuitWaypointFollower(mCarMovementController));
     mWaypointFollower->setPurePursuitRadius(1.0);
     mWaypointFollower->setRepeatRoute(false);
     mWaypointFollower->setAdaptivePurePursuitRadiusActive(true);
 
-    // DepthAI Camera & Follow Point
+    // --- Follow Point ---
+    QSharedPointer<FollowPoint> mFollowPoint(new FollowPoint(mCarMovementController));
+
+    // DepthAI Camera
     DepthAiCamera mDepthAiCamera;
-    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mWaypointFollower.get(), &PurepursuitWaypointFollower::updateFollowPointInVehicleFrame);
+    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mFollowPoint.get(), &FollowPoint::updateFollowPointInVehicleFrame);
 
     // Emergency brake
     EmergencyBrake mEmergencyBrake;
     QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, &mEmergencyBrake, &EmergencyBrake::brakeForDetectedCameraObject);
     QObject::connect(mWaypointFollower.get(), &WaypointFollower::deactivateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::deactivateEmergencyBrake);
     QObject::connect(mWaypointFollower.get(), &WaypointFollower::activateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::activateEmergencyBrake);
+    QObject::connect(mFollowPoint.get(), &FollowPoint::deactivateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::deactivateEmergencyBrake);
+    QObject::connect(mFollowPoint.get(), &FollowPoint::activateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::activateEmergencyBrake);
+
     QObject::connect(&mEmergencyBrake, &EmergencyBrake::emergencyBrake, mWaypointFollower.get(), &WaypointFollower::stop);
 
     // Vehicle lighting
@@ -160,6 +166,7 @@ int main(int argc, char *argv[])
     mavsdkVehicleServer.setMovementController(mCarMovementController);
     mavsdkVehicleServer.setUbloxRover(mUbloxRover);
     mavsdkVehicleServer.setWaypointFollower(mWaypointFollower);
+    mavsdkVehicleServer.setFollowPoint(mFollowPoint);
     // TODO: motor controller status not supported in ControlTower
 
     // Watchdog that warns when EventLoop is slowed down
