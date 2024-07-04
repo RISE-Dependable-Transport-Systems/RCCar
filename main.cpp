@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
     const int mUpdateVehicleStatePeriod_ms = 25;
     QTimer mUpdateVehicleStateTimer;
 
-    QSharedPointer<CarState> mCarState(new CarState);
+    QSharedPointer<CarState> mCarState(new CarState(2));
     MavsdkVehicleServer mavsdkVehicleServer(mCarState);
 
     // --- Lower-level control setup ---
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 
     // DepthAI Camera
     DepthAiCamera mDepthAiCamera;
-    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mFollowPoint.get(), &FollowPoint::updateFollowPointInVehicleFrame);
+    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mFollowPoint.get(), &FollowPoint::pointToFollowInVehicleFrame);
 
     // Emergency brake
     EmergencyBrake mEmergencyBrake;

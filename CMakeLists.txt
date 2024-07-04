@@ -50,6 +50,7 @@ add_executable(RCCar
     WayWise/core/simplewatchdog.cpp
     WayWise/core/vbytearray.cpp
     WayWise/core/geometry.h
+    WayWise/core/coordinatetransforms.h
     WayWise/external/pi-bno055/i2c_bno055.c
     WayWise/external/vesc/vescpacket.cpp
     WayWise/sensors/camera/depthaicamera.cpp
