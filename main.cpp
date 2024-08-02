@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 
     // DepthAI Camera
     DepthAiCamera mDepthAiCamera;
-    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mFollowPoint.get(), &FollowPoint::updateFollowPointInVehicleFrame);
+    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, mFollowPoint.get(), &FollowPoint::updatePointToFollowInVehicleFrame);
 
     // Emergency brake
     EmergencyBrake mEmergencyBrake;
