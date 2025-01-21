@@ -59,6 +59,7 @@ add_executable(RCCar
     WayWise/sensors/gnss/rtcmclient.cpp
     WayWise/sensors/gnss/ublox.cpp
     WayWise/sensors/gnss/ubloxrover.cpp
+    WayWise/sensors/gnss/gnssreceiver.cpp
     WayWise/sensors/imu/bno055orientationupdater.cpp
     WayWise/sensors/imu/imuorientationupdater.cpp
     WayWise/vehicles/carstate.cpp

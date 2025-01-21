@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
 
     QSharedPointer<CarState> mCarState(new CarState);
     MavsdkVehicleServer mavsdkVehicleServer(mCarState);
+    mCarState->provideParameters();
 
     // --- Lower-level control setup ---
     QSharedPointer<CarMovementController> mCarMovementController(new CarMovementController(mCarState));
