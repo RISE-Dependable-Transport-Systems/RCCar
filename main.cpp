@@ -38,13 +38,12 @@ int main(int argc, char *argv[])
 
     QSharedPointer<CarState> mCarState(new CarState);
     MavsdkVehicleServer mavsdkVehicleServer(mCarState);
-    mCarState->provideParameters();
 
     // --- Lower-level control setup ---
     QSharedPointer<CarMovementController> mCarMovementController(new CarMovementController(mCarState));
     // NOTE: HEADSTART rc car (values read from sdvp pcb)
     mCarMovementController->setSpeedToRPMFactor(2997.3);
-    mCarState->setAxisDistance(0.36);
+    //mCarState->setAxisDistance(0.36);
     mCarState->setMaxSteeringAngle(atan(mCarState->getAxisDistance() / 0.67));
 
     // setup and connect VESC, simulate movements if unable to connect
@@ -169,6 +168,12 @@ int main(int argc, char *argv[])
     mavsdkVehicleServer.setWaypointFollower(mWaypointFollower);
     mavsdkVehicleServer.setFollowPoint(mFollowPoint);
     // TODO: motor controller status not supported in ControlTower
+
+    // Advertise parameters
+    mCarState->provideParametersToParameterServer();
+    mavsdkVehicleServer.provideParametersToParameterServer();
+    mWaypointFollower->provideParametersToParameterServer();
+    mFollowPoint->provideParametersToParameterServer();
 
     // Watchdog that warns when EventLoop is slowed down
     SimpleWatchdog watchdog;
