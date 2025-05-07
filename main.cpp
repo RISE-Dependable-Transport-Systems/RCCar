@@ -120,6 +120,12 @@ int main(int argc, char *argv[])
     // Odometry
     QObject::connect(mCarMovementController.get(), &CarMovementController::updatedOdomPositionAndYaw, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawOdom);
 
+    QObject::connect(mCarMovementController.get(), &CarMovementController::updatedOdomPositionAndYaw, [&](QSharedPointer<VehicleState> vehicleState, double distanceMoved) {
+        static int counter = 0;
+        counter++;
+        if (counter % 5 == 0)   qDebug() << "Vehicle speed: " << vehicleState->getSpeed();
+    });
+
     // TODO: input to u-blox disabled for now, seems to cause problems (lost fusion mode on F9R) and needs testing/debugging
 //    QObject::connect(mVESCMotorController.get(), &VESCMotorController::gotStatusValues, [&](double rpm, int tachometer, int tachometer_abs){
 //       Q_UNUSED(rpm)
@@ -151,13 +157,14 @@ int main(int argc, char *argv[])
 
     // Emergency brake
     EmergencyBrake mEmergencyBrake;
-    QObject::connect(&mDepthAiCamera, &DepthAiCamera::closestObject, &mEmergencyBrake, &EmergencyBrake::brakeForDetectedCameraObject);
+    QObject::connect(&mDepthAiCamera, &DepthAiCamera::brakeSignal, &mEmergencyBrake, &EmergencyBrake::brakeForDetectedCameraObject);
     QObject::connect(mWaypointFollower.get(), &WaypointFollower::deactivateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::deactivateEmergencyBrake);
     QObject::connect(mWaypointFollower.get(), &WaypointFollower::activateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::activateEmergencyBrake);
     QObject::connect(mFollowPoint.get(), &FollowPoint::deactivateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::deactivateEmergencyBrake);
     QObject::connect(mFollowPoint.get(), &FollowPoint::activateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::activateEmergencyBrake);
 
     QObject::connect(&mEmergencyBrake, &EmergencyBrake::emergencyBrake, mWaypointFollower.get(), &WaypointFollower::stop);
+    // ToDo: set desired speed to 0 instead of calling WaypointFollower
 
     // Vehicle lighting
     QSharedPointer<VehicleLighting> mVehicleLighting(new VehicleLighting(mCarState));
@@ -194,6 +201,9 @@ int main(int argc, char *argv[])
            QProcess::startDetached("sudo", QStringList() << "shutdown" << "-r" << "now");
         }
     });
+
+    mCarMovementController->setDesiredSpeed(0.3);   // 30 cm per sec = 1.5m after 5 sec
+    QTimer::singleShot(5 * 1000, [&]() { mCarMovementController->setDesiredSpeed(0.3); } );
 
     qDebug() << "\n" // by hjw
              << "                    .------.\n"
