@@ -163,6 +163,7 @@ int main(int argc, char *argv[])
     QObject::connect(mFollowPoint.get(), &FollowPoint::deactivateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::deactivateEmergencyBrake);
     QObject::connect(mFollowPoint.get(), &FollowPoint::activateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::activateEmergencyBrake);
 
+    mEmergencyBrake.activateEmergencyBrake();
     // QObject::connect(&mEmergencyBrake, &EmergencyBrake::emergencyBrake, mWaypointFollower.get(), &WaypointFollower::stop);
     QObject::connect(&mEmergencyBrake, &EmergencyBrake::emergencyBrake, [&](){
         mCarMovementController->setDesiredSpeed(0.0);
