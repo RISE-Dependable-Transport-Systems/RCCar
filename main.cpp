@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     // --- Lower-level control setup ---
     QSharedPointer<CarMovementController> mCarMovementController(new CarMovementController(mCarState));
     // NOTE: HEADSTART rc car (values read from sdvp pcb)
-    mCarMovementController->setSpeedToRPMFactor(2997.3);
+    mCarMovementController->setSpeedToRPMFactor(10780); // original value: 2997.3
     //mCarState->setAxisDistance(0.36);
     mCarState->setMaxSteeringAngle(atan(mCarState->getAxisDistance() / 0.67));
 
@@ -163,8 +163,10 @@ int main(int argc, char *argv[])
     QObject::connect(mFollowPoint.get(), &FollowPoint::deactivateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::deactivateEmergencyBrake);
     QObject::connect(mFollowPoint.get(), &FollowPoint::activateEmergencyBrake, &mEmergencyBrake, &EmergencyBrake::activateEmergencyBrake);
 
-    QObject::connect(&mEmergencyBrake, &EmergencyBrake::emergencyBrake, mWaypointFollower.get(), &WaypointFollower::stop);
-    // ToDo: set desired speed to 0 instead of calling WaypointFollower
+    // QObject::connect(&mEmergencyBrake, &EmergencyBrake::emergencyBrake, mWaypointFollower.get(), &WaypointFollower::stop);
+    QObject::connect(&mEmergencyBrake, &EmergencyBrake::emergencyBrake, [&](){
+        mCarMovementController->setDesiredSpeed(0.0);
+    });
 
     // Vehicle lighting
     QSharedPointer<VehicleLighting> mVehicleLighting(new VehicleLighting(mCarState));
@@ -202,9 +204,6 @@ int main(int argc, char *argv[])
         }
     });
 
-    mCarMovementController->setDesiredSpeed(0.3);   // 30 cm per sec = 1.5m after 5 sec
-    QTimer::singleShot(5 * 1000, [&]() { mCarMovementController->setDesiredSpeed(0.3); } );
-
     qDebug() << "\n" // by hjw
              << "                    .------.\n"
              << "                    :|||\"\"\"`.`.\n"
@@ -216,6 +215,15 @@ int main(int argc, char *argv[])
              << "  /_,-/ ,-. \\ `._____|__________||/ ,-. \\ \\_[\n"
              << "     /\\ `-' /                    /\\ `-' /\n"
              << "       `---'                       `---'\n";
+
+    // Test 2: Straight path (5m)
+    mCarMovementController->setDesiredSpeed(0.5);
+    QTimer::singleShot(10 * 1000, [&](){
+        //qDebug() << "Stopped car after 5 sec";
+        mCarMovementController->setDesiredSpeed(0.0);
+    });
+
+    // Test 3: Angular approach (ToDo)
 
     return a.exec();
 }
