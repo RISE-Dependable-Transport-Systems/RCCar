@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     QTimer mUpdateVehicleStateTimer;
 
     QSharedPointer<CarState> mCarState(new CarState);
-    MavsdkVehicleServer mavsdkVehicleServer(mCarState);
+    MavsdkVehicleServer mavsdkVehicleServer(mCarState/*, QHostAddress("192.168.111.111")*/); // <---! Add your IP of the Control Tower
 
     // --- Lower-level control setup ---
     QSharedPointer<CarMovementController> mCarMovementController(new CarMovementController(mCarState));
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
         mCarMovementController->setServoController(servoController);
     } else {
         QObject::connect(&mUpdateVehicleStateTimer, &QTimer::timeout, [&](){
-            mCarState->simulationStep(mUpdateVehicleStatePeriod_ms, PosType::fused);
+            mCarMovementController->simulationStep(mUpdateVehicleStatePeriod_ms);
         });
         mUpdateVehicleStateTimer.start(mUpdateVehicleStatePeriod_ms);
     }
@@ -82,11 +82,23 @@ int main(int argc, char *argv[])
             if (mUbloxRover->connectSerial(portInfo)) {
                 qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
 
-                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 0.0);
+                mUbloxRover->setChipOrientationOffset(0.0, 0.0, 0.0);
             }
         }
     }
     QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndYaw, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawGNSS);
+    if (!mUbloxRover->isSerialConnected()) {
+        QObject::connect(
+            mCarMovementController.get(),
+            &CarMovementController::updatedOdomPositionAndYaw,
+            [&](QSharedPointer<VehicleState> vehicleState, double distanceDriven) {
+                Q_UNUSED(distanceDriven)
+                PosPoint currentPosition = vehicleState->getPosition(PosType::odom);
+                currentPosition.setType(PosType::fused);
+                vehicleState->setPosition(currentPosition);
+            }
+        );
+    }
 
     // -- NTRIP/TCP client setup for feeding RTCM data into GNSS receiver
     RtcmClient rtcmClient;
@@ -181,7 +193,7 @@ int main(int argc, char *argv[])
     // Perform safe shutdown
     signal(SIGINT, terminationSignalHandler);
     QObject::connect(&a, &QCoreApplication::aboutToQuit, [&](){
-        mUbloxRover->saveOnShutdown();
+        mUbloxRover->aboutToShutdown();
         ParameterServer::getInstance()->saveParametersToXmlFile("vehicle_parameters.xml");
     });
     QObject::connect(&mavsdkVehicleServer, &MavsdkVehicleServer::shutdownOrRebootOnboardComputer, [&](bool isShutdown){
