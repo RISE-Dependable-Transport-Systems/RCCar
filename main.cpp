@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
         mCarMovementController->setServoController(servoController);
     } else {
         QObject::connect(&mUpdateVehicleStateTimer, &QTimer::timeout, [&](){
-            mCarState->simulationStep(mUpdateVehicleStatePeriod_ms, PosType::fused);
+            mCarMovementController->simulationStep(mUpdateVehicleStatePeriod_ms);
         });
         mUpdateVehicleStateTimer.start(mUpdateVehicleStatePeriod_ms);
     }
@@ -76,27 +76,49 @@ int main(int argc, char *argv[])
     SDVPVehiclePositionFuser positionFuser;
 
     // GNSS (with fused IMU when using u-blox F9R)
-    QSharedPointer<UbloxRover> mUbloxRover(new UbloxRover(mCarState));
+    QSharedPointer<GNSSReceiver> mGNSSReceiver;
     foreach(const QSerialPortInfo &portInfo, QSerialPortInfo::availablePorts()) {
         if (portInfo.manufacturer().toLower().replace("-", "").contains("ublox")) {
+            QSharedPointer<UbloxRover> mUbloxRover(new UbloxRover(mCarState));
             if (mUbloxRover->connectSerial(portInfo)) {
                 qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
 
-                mUbloxRover->setIMUOrientationOffset(0.0, 0.0, 0.0);
+                mUbloxRover->setChipOrientationOffset(0.0, 0.0, 0.0);
+                QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndYaw, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawGNSS);
+
+                mUbloxRover->setReceiverVariant(RECEIVER_VARIANT::UBLX_ZED_F9P); // or UBLX_ZED_F9P
+                mavsdkVehicleServer.setUbloxRover(mUbloxRover);
+
+                // -- NTRIP/TCP client setup for feeding RTCM data into GNSS receiver
+                RtcmClient rtcmClient;
+                QObject::connect(mUbloxRover.get(), &UbloxRover::gotNmeaGga, &rtcmClient, &RtcmClient::forwardNmeaGgaToServer);
+                QObject::connect(&rtcmClient, &RtcmClient::rtcmData, mUbloxRover.get(), &UbloxRover::writeRtcmToUblox);
+                QObject::connect(&rtcmClient, &RtcmClient::baseStationPosition, mUbloxRover.get(), &UbloxRover::setEnuRef);
+                if (rtcmClient.connectWithInfoFromFile("./rtcmServerInfo.txt"))
+                    qDebug() << "RtcmClient: connected to" << QString(rtcmClient.getCurrentHost()+ ":" + QString::number(rtcmClient.getCurrentPort()));
+                else
+                    qDebug() << "RtcmClient: not connected";
+
+                mGNSSReceiver = mUbloxRover;
             }
         }
     }
-    QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndYaw, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawGNSS);
 
-    // -- NTRIP/TCP client setup for feeding RTCM data into GNSS receiver
-    RtcmClient rtcmClient;
-    QObject::connect(mUbloxRover.get(), &UbloxRover::gotNmeaGga, &rtcmClient, &RtcmClient::forwardNmeaGgaToServer);
-    QObject::connect(&rtcmClient, &RtcmClient::rtcmData, mUbloxRover.get(), &UbloxRover::writeRtcmToUblox);
-    QObject::connect(&rtcmClient, &RtcmClient::baseStationPosition, mUbloxRover.get(), &UbloxRover::setEnuRef);
-    if (rtcmClient.connectWithInfoFromFile("./rtcmServerInfo.txt"))
-        qDebug() << "RtcmClient: connected to" << QString(rtcmClient.getCurrentHost()+ ":" + QString::number(rtcmClient.getCurrentPort()));
-    else
-        qDebug() << "RtcmClient: not connected";
+    if (!mGNSSReceiver) {
+        qDebug() << "No GNSS receiver connected. Simulating GNSS data.";
+        mGNSSReceiver.reset(new GNSSReceiver(mCarState));
+        mGNSSReceiver->setReceiverVariant(RECEIVER_VARIANT::WAYWISE_SIMULATED);
+        mGNSSReceiver->setReceiverState(RECEIVER_STATE::READY);
+
+        QObject::connect(mCarMovementController.get(), &CarMovementController::updatedOdomPositionAndYaw, [&](QSharedPointer<VehicleState> vehicleState, double distanceDriven){
+            Q_UNUSED(distanceDriven)
+            PosPoint currentPosition = vehicleState->getPosition(PosType::odom);
+            currentPosition.setType(PosType::GNSS);
+            vehicleState->setPosition(currentPosition);
+            currentPosition.setType(PosType::fused);
+            vehicleState->setPosition(currentPosition);
+        });
+    }
 
     // TODO: re-add feature for MAVLink-based communication
     // -- In case RControlStation sends RTCM data, RtcmClient is disabled (RTCM from RControlStation has priority)
@@ -111,10 +133,22 @@ int main(int argc, char *argv[])
     // IMU
     bool useVESCIMU = true;
     QSharedPointer<IMUOrientationUpdater> mIMUOrientationUpdater;
-    if (useVESCIMU)
-        mIMUOrientationUpdater = mVESCMotorController->getIMUOrientationUpdater(mCarState);
-    else
+    if (useVESCIMU) {
+        if (mVESCMotorController->isSerialConnected()) {
+            mIMUOrientationUpdater = mVESCMotorController->getIMUOrientationUpdater(mCarState);
+        } else {
+            qDebug() << "VESCMotorController not connected. Simulating IMU data.";
+            QObject::connect(mCarMovementController.get(), &CarMovementController::updatedOdomPositionAndYaw, [&](QSharedPointer<VehicleState> vehicleState, double distanceDriven){
+                Q_UNUSED(distanceDriven)
+                PosPoint currentPosition = vehicleState->getPosition(PosType::odom);
+                currentPosition.setType(PosType::IMU);
+                vehicleState->setPosition(currentPosition);
+                positionFuser.correctPositionAndYawIMU(vehicleState);
+            });
+        }
+    } else {
         mIMUOrientationUpdater.reset(new BNO055OrientationUpdater(mCarState, "/dev/i2c-1"));
+    }
     QObject::connect(mIMUOrientationUpdater.get(), &IMUOrientationUpdater::updatedIMUOrientation, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawIMU);
 
     // Odometry
@@ -164,7 +198,6 @@ int main(int argc, char *argv[])
 
     // Setup MAVLINK communication towards ControlTower
     mavsdkVehicleServer.setMovementController(mCarMovementController);
-    mavsdkVehicleServer.setUbloxRover(mUbloxRover);
     mavsdkVehicleServer.setWaypointFollower(mWaypointFollower);
     mavsdkVehicleServer.setFollowPoint(mFollowPoint);
     // TODO: motor controller status not supported in ControlTower
@@ -181,7 +214,7 @@ int main(int argc, char *argv[])
     // Perform safe shutdown
     signal(SIGINT, terminationSignalHandler);
     QObject::connect(&a, &QCoreApplication::aboutToQuit, [&](){
-        mUbloxRover->saveOnShutdown();
+        mGNSSReceiver->aboutToShutdown();
         ParameterServer::getInstance()->saveParametersToXmlFile("vehicle_parameters.xml");
     });
     QObject::connect(&mavsdkVehicleServer, &MavsdkVehicleServer::shutdownOrRebootOnboardComputer, [&](bool isShutdown){
