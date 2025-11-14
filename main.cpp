@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
                 mUbloxRover->setChipOrientationOffset(0.0, 0.0, 0.0);
                 QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndYaw, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawGNSS);
 
-                mUbloxRover->setReceiverVariant(RECEIVER_VARIANT::UBLX_ZED_F9P); // or UBLX_ZED_F9P
+                mUbloxRover->setReceiverVariant(RECEIVER_VARIANT::UBLX_ZED_F9P); // or UBLX_ZED_F9R
                 mavsdkVehicleServer.setUbloxRover(mUbloxRover);
 
                 // -- NTRIP/TCP client setup for feeding RTCM data into GNSS receiver
