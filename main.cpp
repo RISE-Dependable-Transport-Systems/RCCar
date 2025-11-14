@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     QTimer mUpdateVehicleStateTimer;
 
     QSharedPointer<CarState> mCarState(new CarState);
-    MavsdkVehicleServer mavsdkVehicleServer(mCarState);
+    MavsdkVehicleServer mavsdkVehicleServer(mCarState/*, QHostAddress("192.168.111.255")*/); // <---! Add your IP of the Control Tower
 
     // --- Lower-level control setup ---
     QSharedPointer<CarMovementController> mCarMovementController(new CarMovementController(mCarState));
