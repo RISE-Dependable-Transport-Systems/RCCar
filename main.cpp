@@ -37,12 +37,12 @@ int main(int argc, char *argv[])
     QTimer mUpdateVehicleStateTimer;
 
     QSharedPointer<CarState> mCarState(new CarState);
-    MavsdkVehicleServer mavsdkVehicleServer(mCarState/*, QHostAddress("192.168.111.111")*/); // <---! Add your IP of the Control Tower
+    MavsdkVehicleServer mavsdkVehicleServer(mCarState, QHostAddress("192.168.111.111")); // <---! Add your IP of the Control Tower
 
     // --- Lower-level control setup ---
     QSharedPointer<CarMovementController> mCarMovementController(new CarMovementController(mCarState));
     // NOTE: HEADSTART rc car (values read from sdvp pcb)
-    mCarMovementController->setSpeedToRPMFactor(2997.3);
+    mCarMovementController->setSpeedToRPMFactor(10780); // original value: 2997.3
     //mCarState->setAxisDistance(0.36);
     mCarState->setMaxSteeringAngle(atan(mCarState->getAxisDistance() / 0.67));
 
