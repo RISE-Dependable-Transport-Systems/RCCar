@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
                 RtcmClient rtcmClient;
                 QObject::connect(mUbloxRover.get(), &UbloxRover::gotNmeaGga, &rtcmClient, &RtcmClient::forwardNmeaGgaToServer);
                 QObject::connect(&rtcmClient, &RtcmClient::rtcmData, mUbloxRover.get(), &UbloxRover::writeRtcmToUblox);
-                QObject::connect(&rtcmClient, &RtcmClient::baseStationPosition, mUbloxRover.get(), &UbloxRover::setEnuRef);
+                QObject::connect(&rtcmClient, &RtcmClient::baseStationPosition, mCarState.get(), &VehicleState::setEnuRef);
                 if (rtcmClient.connectWithInfoFromFile("./rtcmServerInfo.txt"))
                     qDebug() << "RtcmClient: connected to" << QString(rtcmClient.getCurrentHost()+ ":" + QString::number(rtcmClient.getCurrentPort()));
                 else
@@ -125,8 +125,8 @@ int main(int argc, char *argv[])
 //    QObject::connect(&mPacketIFServer, &PacketInterfaceTCPServer::rtcmData, [&](){
 //        qDebug() << "PacketInterfaceTCPServer: got RTCM data, disabling on-vehicle RTCM client.";
 //        rtcmClient.disconnect();
-//        QObject::disconnect(&rtcmClient, &RtcmClient::rtcmData, mUbloxRover.get(), &UbloxRover::writeRtcmToUblox);
-//        QObject::disconnect(&rtcmClient, &RtcmClient::baseStationPosition, mUbloxRover.get(), &UbloxRover::setEnuRef);
+//        QObject::disconnect(&rtcmClient, &RtcmClient::rtcmData, mCarState.get(), &UbloxRover::writeRtcmToUblox);
+//        QObject::disconnect(&rtcmClient, &RtcmClient::baseStationPosition, mUbloxRover.get(), &VehicleState::setEnuRef);
 //        QObject::disconnect(&mPacketIFServer, &PacketInterfaceTCPServer::rtcmData, nullptr, nullptr); // run this slot only once
 //    });
 
@@ -175,6 +175,17 @@ int main(int argc, char *argv[])
     mWaypointFollower->setPurePursuitRadius(1.0);
     mWaypointFollower->setRepeatRoute(false);
     mWaypointFollower->setAdaptivePurePursuitRadiusActive(true);
+
+    QString speedLimitRegionsFilePath = "./speedLimitRegions.json";
+    mWaypointFollower->loadSpeedLimitRegionsFile(speedLimitRegionsFilePath);   // uses the default ENU reference
+
+    QObject::connect(mCarState.get(), &CarState::updatedEnuReference, [&](llh_t mEnuReference) {
+        Q_UNUSED(mEnuReference)
+        qInfo() << "New ENU reference received, reloading speed limit regions.";
+
+        mWaypointFollower->clearSpeedLimitRegions();
+        mWaypointFollower->loadSpeedLimitRegionsFile(speedLimitRegionsFilePath);
+    });
 
     // --- Follow Point ---
     QSharedPointer<FollowPoint> mFollowPoint(new FollowPoint(mCarMovementController));
