@@ -176,6 +176,17 @@ int main(int argc, char *argv[])
     mWaypointFollower->setRepeatRoute(false);
     mWaypointFollower->setAdaptivePurePursuitRadiusActive(true);
 
+    QString speedLimitRegionsFilePath = "./speedLimitRegions.json";
+    mWaypointFollower->loadSpeedLimitRegionsFile(speedLimitRegionsFilePath);   // uses the default ENU reference
+
+    QObject::connect(mCarState.get(), &CarState::updatedEnuReference, [&](llh_t mEnuReference) {
+        Q_UNUSED(mEnuReference)
+        qInfo() << "New ENU reference received, reloading speed limit regions.";
+
+        mWaypointFollower->clearSpeedLimitRegions();
+        mWaypointFollower->loadSpeedLimitRegionsFile(speedLimitRegionsFilePath);
+    });
+
     // --- Follow Point ---
     QSharedPointer<FollowPoint> mFollowPoint(new FollowPoint(mCarMovementController));
 
