@@ -52,8 +52,8 @@ add_executable(RCCar
     WayWise/core/geometry.h
     WayWise/external/pi-bno055/i2c_bno055.c
     WayWise/external/vesc/vescpacket.cpp
-    WayWise/routeplanning/zigzagroutegenerator.cpp
-    WayWise/routeplanning/zigzagroutegenerator.h
+    WayWise/routeplanning/routeutils.cpp
+    WayWise/routeplanning/routeutils.h
     WayWise/sensors/camera/depthaicamera.cpp
     WayWise/sensors/camera/gimbal.h
     WayWise/sensors/fusion/sdvpvehiclepositionfuser.cpp
