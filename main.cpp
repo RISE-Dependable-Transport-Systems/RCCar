@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
 
     QSharedPointer<CarState> mCarState(new CarState);
     MavsdkVehicleServer mavsdkVehicleServer(mCarState/*, QHostAddress("192.168.111.255")*/); // <---! Add your IP of the Control Tower
+    mavsdkVehicleServer.setTransferLogs(true);
 
     // --- Lower-level control setup ---
     QSharedPointer<CarMovementController> mCarMovementController(new CarMovementController(mCarState));
@@ -111,12 +112,9 @@ int main(int argc, char *argv[])
         mGNSSReceiver->setReceiverState(RECEIVER_STATE::READY);
 
         QObject::connect(mCarMovementController.get(), &CarMovementController::updatedOdomPositionAndYaw, [&](QSharedPointer<VehicleState> vehicleState, double distanceDriven){
+            Q_UNUSED(vehicleState)
             Q_UNUSED(distanceDriven)
-            PosPoint currentPosition = vehicleState->getPosition(PosType::odom);
-            currentPosition.setType(PosType::GNSS);
-            vehicleState->setPosition(currentPosition);
-            currentPosition.setType(PosType::fused);
-            vehicleState->setPosition(currentPosition);
+            mGNSSReceiver->simulationStep();
         });
     }
 
@@ -138,12 +136,11 @@ int main(int argc, char *argv[])
             mIMUOrientationUpdater = mVESCMotorController->getIMUOrientationUpdater(mCarState);
         } else {
             qDebug() << "VESCMotorController not connected. Simulating IMU data.";
+            mIMUOrientationUpdater.reset(new IMUOrientationUpdater(mCarState));
             QObject::connect(mCarMovementController.get(), &CarMovementController::updatedOdomPositionAndYaw, [&](QSharedPointer<VehicleState> vehicleState, double distanceDriven){
+                Q_UNUSED(vehicleState)
                 Q_UNUSED(distanceDriven)
-                PosPoint currentPosition = vehicleState->getPosition(PosType::odom);
-                currentPosition.setType(PosType::IMU);
-                vehicleState->setPosition(currentPosition);
-                positionFuser.correctPositionAndYawIMU(vehicleState);
+                mIMUOrientationUpdater->simulationStep();
             });
         }
     } else {
