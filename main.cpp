@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
                 qDebug() << "UbloxRover connected to:" << portInfo.systemLocation();
 
                 mUbloxRover->setChipOrientationOffset(0.0, 0.0, 0.0);
-                QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndYaw, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawGNSS);
+                QObject::connect(mUbloxRover.get(), &UbloxRover::updatedGNSSPositionAndOrientation, &positionFuser, &SDVPVehiclePositionFuser::correctPositionAndYawGNSS);
 
                 mUbloxRover->setReceiverVariant(RECEIVER_VARIANT::UBLX_ZED_F9P); // or UBLX_ZED_F9R
                 mavsdkVehicleServer.setUbloxRover(mUbloxRover);
