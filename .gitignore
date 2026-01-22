@@ -1,2 +1,4 @@
 *.user
-
+.vscode/
+build/
+log/
